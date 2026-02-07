@@ -140,7 +140,7 @@
 .clueNum {
   font-weight: var(--weight-bold);
   font-size: var(--text-sm);
-  min-width: 24px;
+  min-width: 18px;
   color: var(--color-text);
 }
 
