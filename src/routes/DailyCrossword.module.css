@@ -35,7 +35,7 @@
 
 /* Classic: clues left, grid right */
 .classicLayout {
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 300px 1fr;
 }
 
 .classicLayout .clueSection {
