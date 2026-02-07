@@ -8,6 +8,7 @@ const ALGORITHM_LABELS: Record<CrosswordAlgorithm, string> = {
   dense: "Dense",
   fitted: "Fitted",
   smart: "Smart",
+  "fillin-smart": "Smart Fill",
 }
 
 interface GridPreviewProps {
@@ -38,7 +39,7 @@ export function GridPreview({ data, algorithm, totalWords }: GridPreviewProps) {
         </span>
         <span className={styles.stat}>
           {data.words.length}
-          {totalWords ? ` / ${totalWords}` : ""} words
+          {totalWords && data.puzzleType !== "fillin" ? ` / ${totalWords}` : ""} words
         </span>
         <span className={styles.stat}>{Math.round(density * 100)}% dense</span>
         {avgPlay > 0 && (

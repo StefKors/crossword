@@ -50,6 +50,7 @@ export function CrosswordSaver({ data, userId }: CrosswordSaverProps) {
             words: data.words,
             width: data.width,
             height: data.height,
+            puzzleType: data.puzzleType ?? "classic",
             status: "draft",
             createdAt: Date.now(),
           })

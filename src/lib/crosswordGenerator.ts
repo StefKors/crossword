@@ -6,6 +6,7 @@ import type {
   WordEntry,
 } from "../types/crossword"
 import { parseWordlist, getPlayabilityScore } from "./wordlist"
+import { generateFillinSmart } from "./fillinGenerator"
 
 // ─── Shared types ────────────────────────────────────────────────
 
@@ -329,7 +330,7 @@ function finalize(grid: Grid, placed: GridWord[]): CrosswordData {
   }
   const avgPlayability = finalWords.length > 0 ? Math.round(totalPlay / finalWords.length) : 0
 
-  return { grid: trimmedGrid, words: finalWords, width, height, avgPlayability }
+  return { grid: trimmedGrid, words: finalWords, width, height, avgPlayability, puzzleType: "classic" }
 }
 
 function findPlacements(
@@ -375,7 +376,13 @@ function findPlacements(
   return candidates
 }
 
-// ─── Algorithm: Original ─────────────────────────────────────────
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// CLASSIC CROSSWORD ALGORITHMS
+// These algorithms grow outward from seed words. They produce sparse
+// grids with many black squares and require clue definitions.
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+// ─── Classic Algorithm: Original ─────────────────────────────────
 
 function generateOriginal(words: WordEntry[]): CrosswordData {
   const gridSize = 80
@@ -444,7 +451,7 @@ function generateOriginal(words: WordEntry[]): CrosswordData {
   return finalize(grid, placed)
 }
 
-// ─── Algorithm: Compact ──────────────────────────────────────────
+// ─── Classic Algorithm: Compact ──────────────────────────────────
 
 function generateCompact(words: WordEntry[]): CrosswordData {
   const gridSize = 50
@@ -522,7 +529,7 @@ function generateCompact(words: WordEntry[]): CrosswordData {
   return finalize(grid, placed)
 }
 
-// ─── Algorithm: Dense ────────────────────────────────────────────
+// ─── Classic Algorithm: Dense ────────────────────────────────────
 
 function sharedLetterScore(a: string, b: string): number {
   let score = 0
@@ -680,7 +687,7 @@ function generateDense(words: WordEntry[]): CrosswordData {
   return finalize(grid, placed)
 }
 
-// ─── Algorithm: Fitted ───────────────────────────────────────────
+// ─── Classic Algorithm: Fitted ───────────────────────────────────
 
 function generateFitted(words: WordEntry[]): CrosswordData {
   const gridSize = 30
@@ -941,7 +948,7 @@ function findBestFiller(
   return candidates[0].entry
 }
 
-// ─── Algorithm: Smart ────────────────────────────────────────────
+// ─── Classic Algorithm: Smart ────────────────────────────────────
 
 function generateSmart(
   words: WordEntry[],
@@ -1285,6 +1292,7 @@ export function generateCrossword(
   onProgress?: (msg: string, pct: number) => void,
 ): CrosswordData {
   switch (algorithm) {
+    // Classic crossword algorithms
     case "original":
       return generateOriginal(words)
     case "compact":
@@ -1295,6 +1303,9 @@ export function generateCrossword(
       return generateFitted(words)
     case "smart":
       return generateSmart(words, onProgress)
+    // Fill-in puzzle algorithms
+    case "fillin-smart":
+      return generateFillinSmart(onProgress)
     default:
       return generateSmart(words, onProgress)
   }

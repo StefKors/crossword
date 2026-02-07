@@ -22,6 +22,7 @@ const _schema = i.schema({
       width: i.number(),
       height: i.number(),
       status: i.string().indexed(),
+      puzzleType: i.string().indexed(),
       createdAt: i.date().indexed(),
     }),
     userSettings: i.entity({

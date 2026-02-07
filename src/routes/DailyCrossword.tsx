@@ -1,15 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react"
-import { motion, AnimatePresence } from "motion/react"
+import { motion } from "motion/react"
 import { id as instantId } from "@instantdb/react"
 import { db } from "../lib/db"
 import { useCrosswordInteraction } from "../lib/useCrosswordInteraction"
 import { useUserSettings } from "../lib/useUserSettings"
 import { CrosswordGrid } from "../components/CrosswordGrid/CrosswordGrid"
-import { ModeToggle } from "../components/ModeToggle/ModeToggle"
 import { CluePanel } from "../features/daily/CluePanel/CluePanel"
 import { ProgressBar } from "../features/daily/ProgressBar/ProgressBar"
 import { StatsCard } from "../features/daily/StatsCard/StatsCard"
-import type { CrosswordData, Direction, PuzzleMode, CellState } from "../types/crossword"
+import type { CrosswordData, Direction, PuzzleType, CellState } from "../types/crossword"
 import styles from "./DailyCrossword.module.css"
 
 export function DailyCrossword() {
@@ -58,7 +57,7 @@ function PuzzlePlayer({
   crosswordId: string
   date: string
 }) {
-  const [mode, setMode] = useState<PuzzleMode>("classic")
+  const puzzleType: PuzzleType = data.puzzleType ?? "classic"
   const [showStats, setShowStats] = useState(false)
   const [startTime] = useState(() => Date.now())
   const [elapsed, setElapsed] = useState(0)
@@ -99,13 +98,13 @@ function PuzzlePlayer({
           .merge({
             cellState: values,
             timeSpent: elapsedSec,
-            mode,
+            mode: puzzleType,
             date,
           })
           .link({ user: user.id, crossword: crosswordId }),
       )
     },
-    [user, existingProgress?.id, startTime, mode, date, crosswordId],
+    [user, existingProgress?.id, startTime, puzzleType, date, crosswordId],
   )
 
   const interaction = useCrosswordInteraction(data, handleCellChange)
@@ -177,36 +176,26 @@ function PuzzlePlayer({
       transition={{ duration: 0.3 }}
     >
       <div className={styles.header}>
-        <h2>Daily Crossword</h2>
+        <h2>{puzzleType === "fillin" ? "Daily Fill-In" : "Daily Crossword"}</h2>
         <div className={styles.controls}>
           {settings.showTimer && <span className={styles.timer}>{formatTime(elapsed)}</span>}
-          <ModeToggle mode={mode} onChange={setMode} />
         </div>
       </div>
 
       <div
-        className={`${styles.content} ${mode === "classic" ? styles.classicLayout : styles.fillinLayout}`}
+        className={`${styles.content} ${puzzleType === "classic" ? styles.classicLayout : styles.fillinLayout}`}
       >
         <div className={styles.clueSection}>
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={mode}
-              initial={{ opacity: 0, x: mode === "classic" ? -10 : 10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: mode === "classic" ? -10 : 10 }}
-              transition={{ duration: 0.2 }}
-              className={styles.cluePanelWrapper}
-            >
-              <CluePanel
-                data={data}
-                mode={mode}
-                cellValues={interaction.cellValues}
-                selectedCell={interaction.selectedCell}
-                selectedDirection={interaction.selectedDirection}
-                onClueClick={handleClueClick}
-              />
-            </motion.div>
-          </AnimatePresence>
+          <div className={styles.cluePanelWrapper}>
+            <CluePanel
+              data={data}
+              puzzleType={puzzleType}
+              cellValues={interaction.cellValues}
+              selectedCell={interaction.selectedCell}
+              selectedDirection={interaction.selectedDirection}
+              onClueClick={handleClueClick}
+            />
+          </div>
         </div>
 
         <div className={styles.gridSection}>

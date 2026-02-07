@@ -1,11 +1,11 @@
 import { useMemo } from "react"
 import { motion } from "motion/react"
-import type { CrosswordData, Direction, PuzzleMode, CellState } from "../../../types/crossword"
+import type { CrosswordData, Direction, PuzzleType, CellState } from "../../../types/crossword"
 import styles from "./CluePanel.module.css"
 
 interface CluePanelProps {
   data: CrosswordData
-  mode: PuzzleMode
+  puzzleType: PuzzleType
   cellValues: CellState
   selectedCell: { row: number; col: number } | null
   selectedDirection: Direction
@@ -14,13 +14,13 @@ interface CluePanelProps {
 
 export function CluePanel({
   data,
-  mode,
+  puzzleType,
   cellValues,
   selectedCell,
   selectedDirection,
   onClueClick,
 }: CluePanelProps) {
-  if (mode === "fillin") {
+  if (puzzleType === "fillin") {
     return <FillItInPanel data={data} cellValues={cellValues} />
   }
 

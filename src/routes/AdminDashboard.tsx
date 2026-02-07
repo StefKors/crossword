@@ -9,10 +9,10 @@ import type { GenerationProgress } from "../lib/crosswordGenerator"
 import { WordPicker } from "../features/admin/WordPicker/WordPicker"
 import { GridPreview } from "../features/admin/GridPreview/GridPreview"
 import { CrosswordSaver } from "../features/admin/CrosswordSaver/CrosswordSaver"
-import type { CrosswordAlgorithm, CrosswordData, WordEntry } from "../types/crossword"
+import type { CrosswordAlgorithm, CrosswordData, PuzzleType, WordEntry } from "../types/crossword"
 import styles from "./AdminDashboard.module.css"
 
-const ALGORITHMS: { value: CrosswordAlgorithm; label: string; description: string }[] = [
+const CLASSIC_ALGORITHMS: { value: CrosswordAlgorithm; label: string; description: string }[] = [
   { value: "smart", label: "Smart", description: "Multi-attempt, playability-optimized" },
   { value: "fitted", label: "Fitted", description: "Gap-filling, dictionary scan" },
   { value: "compact", label: "Compact", description: "Tight grid, compactness scoring" },
@@ -20,14 +20,21 @@ const ALGORITHMS: { value: CrosswordAlgorithm; label: string; description: strin
   { value: "original", label: "Original", description: "Strict adjacency, greedy" },
 ]
 
+const FILLIN_ALGORITHMS: { value: CrosswordAlgorithm; label: string; description: string }[] = [
+  { value: "fillin-smart", label: "Smart Fill", description: "CSP solver, dense grid, high playability" },
+]
+
 function AdminContent() {
   const user = db.useUser()
+  const [puzzleType, setPuzzleType] = useState<PuzzleType>("classic")
   const [words, setWords] = useState<WordEntry[]>([])
   const [crosswordData, setCrosswordData] = useState<CrosswordData | null>(null)
   const [generating, setGenerating] = useState(false)
   const [genProgress, setGenProgress] = useState<GenerationProgress | null>(null)
   const [algorithm, setAlgorithm] = useState<CrosswordAlgorithm>("smart")
   const [wordCount, setWordCount] = useState(25)
+
+  const algorithms = puzzleType === "classic" ? CLASSIC_ALGORITHMS : FILLIN_ALGORITHMS
 
   // Fetch saved crosswords
   const { data: savedData } = db.useQuery({
@@ -96,41 +103,73 @@ function AdminContent() {
             onThemeSearch={handleThemeSearch}
           />
 
-          {words.length > 0 && (
-            <div className={styles.generateSection}>
-              <div className={styles.algoSelector}>
-                <span className={styles.algoLabel}>Algorithm</span>
-                <div className={styles.algoOptions}>
-                  {ALGORITHMS.map((algo) => (
-                    <button
-                      key={algo.value}
-                      className={`${styles.algoOption} ${algorithm === algo.value ? styles.algoActive : ""}`}
-                      onClick={() => setAlgorithm(algo.value)}
-                      title={algo.description}
-                    >
-                      {algo.label}
-                    </button>
-                  ))}
-                </div>
+          <div className={styles.generateSection}>
+            <div className={styles.algoSelector}>
+              <span className={styles.algoLabel}>Puzzle Type</span>
+              <div className={styles.algoOptions}>
+                <button
+                  className={`${styles.algoOption} ${puzzleType === "classic" ? styles.algoActive : ""}`}
+                  onClick={() => {
+                    setPuzzleType("classic")
+                    setAlgorithm("smart")
+                    setCrosswordData(null)
+                  }}
+                >
+                  Classic
+                </button>
+                <button
+                  className={`${styles.algoOption} ${puzzleType === "fillin" ? styles.algoActive : ""}`}
+                  onClick={() => {
+                    setPuzzleType("fillin")
+                    setAlgorithm("fillin-smart")
+                    setCrosswordData(null)
+                  }}
+                >
+                  Fill-In
+                </button>
               </div>
-
-              <motion.button
-                className={styles.buildBtn}
-                onClick={() => void handleGenerateCrossword()}
-                disabled={generating}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.97 }}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-              >
-                {generating
-                  ? genProgress
-                    ? genProgress.message
-                    : "Generating Crossword..."
-                  : "Generate Crossword"}
-              </motion.button>
             </div>
-          )}
+
+            {(puzzleType === "classic" ? words.length > 0 : true) && (
+              <>
+                <div className={styles.algoSelector}>
+                  <span className={styles.algoLabel}>Algorithm</span>
+                  <div className={styles.algoOptions}>
+                    {algorithms.map((algo) => (
+                      <button
+                        key={algo.value}
+                        className={`${styles.algoOption} ${algorithm === algo.value ? styles.algoActive : ""}`}
+                        onClick={() => setAlgorithm(algo.value)}
+                        title={algo.description}
+                      >
+                        {algo.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <motion.button
+                  className={styles.buildBtn}
+                  onClick={() => void handleGenerateCrossword()}
+                  disabled={generating || (puzzleType === "classic" && words.length === 0)}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.97 }}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  {generating
+                    ? genProgress
+                      ? genProgress.message
+                      : puzzleType === "fillin"
+                        ? "Generating Fill-In Puzzle..."
+                        : "Generating Crossword..."
+                    : puzzleType === "fillin"
+                      ? "Generate Fill-In Puzzle"
+                      : "Generate Crossword"}
+                </motion.button>
+              </>
+            )}
+          </div>
 
           {crosswordData && <CrosswordSaver data={crosswordData} userId={user.id} />}
         </div>

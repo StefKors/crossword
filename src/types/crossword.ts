@@ -9,12 +9,15 @@ export interface PlacedWord {
   clueNumber: number
 }
 
+export type PuzzleType = "classic" | "fillin"
+
 export interface CrosswordData {
   grid: (string | null)[][]
   words: PlacedWord[]
   width: number
   height: number
   avgPlayability?: number
+  puzzleType?: PuzzleType
 }
 
 export interface WordEntry {
@@ -22,8 +25,12 @@ export interface WordEntry {
   definition: string
 }
 
-export type PuzzleMode = "fillin" | "classic"
+// ─── Classic crossword algorithms ────────────────────────────────
+export type ClassicAlgorithm = "original" | "compact" | "dense" | "fitted" | "smart"
 
-export type CrosswordAlgorithm = "original" | "compact" | "dense" | "fitted" | "smart"
+// ─── Fill-in puzzle algorithms ───────────────────────────────────
+export type FillinAlgorithm = "fillin-smart"
+
+export type CrosswordAlgorithm = ClassicAlgorithm | FillinAlgorithm
 
 export type CellState = Record<string, string>
