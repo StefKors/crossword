@@ -182,7 +182,31 @@ function PuzzlePlayer({
         </div>
       </div>
 
-      <div className={styles.content}>
+      <div
+        className={`${styles.content} ${mode === "classic" ? styles.classicLayout : styles.fillinLayout}`}
+      >
+        <div className={styles.clueSection}>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={mode}
+              initial={{ opacity: 0, x: mode === "classic" ? -10 : 10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: mode === "classic" ? -10 : 10 }}
+              transition={{ duration: 0.2 }}
+              className={styles.cluePanelWrapper}
+            >
+              <CluePanel
+                data={data}
+                mode={mode}
+                cellValues={interaction.cellValues}
+                selectedCell={interaction.selectedCell}
+                selectedDirection={interaction.selectedDirection}
+                onClueClick={handleClueClick}
+              />
+            </motion.div>
+          </AnimatePresence>
+        </div>
+
         <div className={styles.gridSection}>
           <CrosswordGrid
             data={data}
@@ -197,28 +221,6 @@ function PuzzlePlayer({
             onTab={interaction.onTab}
           />
           <ProgressBar correct={interaction.correctCount} total={interaction.totalCount} />
-        </div>
-
-        <div className={styles.clueSection}>
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={mode}
-              initial={{ opacity: 0, x: 10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -10 }}
-              transition={{ duration: 0.2 }}
-              className={styles.cluePanelWrapper}
-            >
-              <CluePanel
-                data={data}
-                mode={mode}
-                cellValues={interaction.cellValues}
-                selectedCell={interaction.selectedCell}
-                selectedDirection={interaction.selectedDirection}
-                onClueClick={handleClueClick}
-              />
-            </motion.div>
-          </AnimatePresence>
         </div>
       </div>
 

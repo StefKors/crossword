@@ -29,14 +29,46 @@
 
 .content {
   display: grid;
-  grid-template-columns: auto 1fr;
   gap: var(--space-6);
   align-items: start;
 }
 
+/* Classic: clues left, grid right */
+.classicLayout {
+  grid-template-columns: 1fr auto;
+}
+
+.classicLayout .clueSection {
+  order: 1;
+}
+
+.classicLayout .gridSection {
+  order: 2;
+}
+
+/* Fill-it-in: grid left, word list right */
+.fillinLayout {
+  grid-template-columns: auto 1fr;
+}
+
+.fillinLayout .gridSection {
+  order: 1;
+}
+
+.fillinLayout .clueSection {
+  order: 2;
+}
+
 @media (max-width: 800px) {
   .content {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
+  }
+
+  .classicLayout .clueSection,
+  .classicLayout .gridSection,
+  .fillinLayout .gridSection,
+  .fillinLayout .clueSection {
+    order: unset;
   }
 }
 
