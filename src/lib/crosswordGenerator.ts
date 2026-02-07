@@ -36,6 +36,17 @@ interface BoundingBox {
 
 type Grid = (string | null)[][]
 
+// ─── Dictionary lookup (cached) ──────────────────────────────────
+
+let _validWords: Set<string> | null = null
+
+function getValidWords(): Set<string> {
+  if (_validWords) return _validWords
+  const all = parseWordlist()
+  _validWords = new Set(all.map((w) => w.word))
+  return _validWords
+}
+
 // ─── Shared helpers ──────────────────────────────────────────────
 
 function makeGrid(size: number): Grid {
@@ -117,9 +128,59 @@ function countIntersections(
 }
 
 /**
+ * Read the full perpendicular word that would be formed at (r, c)
+ * after placing `letter` there. Returns null if it's just the single letter
+ * (no adjacent letters in the perpendicular direction).
+ */
+function getPerpendicularWord(
+  grid: Grid,
+  gridSize: number,
+  r: number,
+  c: number,
+  letter: string,
+  wordDirection: Direction,
+): string | null {
+  // Perpendicular direction: if word is across, check the vertical run; vice versa
+  const dr = wordDirection === "across" ? 1 : 0
+  const dc = wordDirection === "across" ? 0 : 1
+
+  // Walk backwards to find start of perpendicular run
+  let startR = r
+  let startC = c
+  while (true) {
+    const prevR = startR - dr
+    const prevC = startC - dc
+    if (prevR < 0 || prevC < 0 || prevR >= gridSize || prevC >= gridSize) break
+    if (grid[prevR][prevC] === null) break
+    startR = prevR
+    startC = prevC
+  }
+
+  // Walk forwards to collect the full run
+  let word = ""
+  let cr = startR
+  let cc = startC
+  while (cr >= 0 && cc >= 0 && cr < gridSize && cc < gridSize) {
+    const cell = cr === r && cc === c ? letter : grid[cr][cc]
+    if (cell === null) break
+    word += cell
+    cr += dr
+    cc += dc
+  }
+
+  // Single letter = no perpendicular word formed
+  if (word.length <= 1) return null
+  return word
+}
+
+/**
  * Validate a word placement on the grid.
- * @param strict — if true, forbids any non-intersection parallel neighbor (original behavior).
- *                 if false, only checks that the cell before/after is empty and occupied cells match.
+ * Checks:
+ * 1. Bounds
+ * 2. Cell before/after word must be empty (no extending existing words)
+ * 3. Each cell is either empty or matches the letter (intersection)
+ * 4. Every perpendicular letter sequence created must be a valid dictionary word
+ * 5. Must have at least one intersection (except first word on empty grid)
  */
 function isValidPlacement(
   grid: Grid,
@@ -128,7 +189,7 @@ function isValidPlacement(
   row: number,
   col: number,
   direction: Direction,
-  strict: boolean,
+  dictionary: Set<string>,
 ): boolean {
   const len = word.length
 
@@ -161,23 +222,22 @@ function isValidPlacement(
     const existing = grid[r][c]
 
     if (existing !== null) {
-      // Cell occupied — must match our letter (intersection)
+      // Cell occupied — must match our letter
       if (existing !== word[i]) return false
       hasIntersection = true
-    } else if (strict) {
-      // Strict: empty cells must not have parallel neighbors
-      if (direction === "across") {
-        if (r > 0 && grid[r - 1][c] !== null) return false
-        if (r < gridSize - 1 && grid[r + 1][c] !== null) return false
-      } else {
-        if (c > 0 && grid[r][c - 1] !== null) return false
-        if (c < gridSize - 1 && grid[r][c + 1] !== null) return false
+    } else {
+      // Cell is empty — check what perpendicular word would be formed
+      const perpWord = getPerpendicularWord(grid, gridSize, r, c, word[i], direction)
+      if (perpWord !== null) {
+        // A perpendicular sequence of 2+ letters is formed — it MUST be a valid word
+        if (!dictionary.has(perpWord)) return false
       }
     }
   }
 
-  // Must have at least one intersection (except for the first word)
-  return hasIntersection || grid.every((row) => row.every((cell) => cell === null))
+  // Must have at least one intersection (except for the very first word on an empty grid)
+  const isEmpty = grid.every((row) => row.every((cell) => cell === null))
+  return hasIntersection || isEmpty
 }
 
 function trimGrid(grid: Grid): {
@@ -270,7 +330,7 @@ function findPlacements(
   gridSize: number,
   placed: GridWord[],
   word: string,
-  strict: boolean,
+  dictionary: Set<string>,
 ): Placement[] {
   const candidates: Placement[] = []
   const center = gridSize / 2
@@ -291,7 +351,7 @@ function findPlacements(
           col = existing.col - wi
         }
 
-        if (isValidPlacement(grid, gridSize, word, row, col, newDirection, strict)) {
+        if (isValidPlacement(grid, gridSize, word, row, col, newDirection, dictionary)) {
           const intersections = countIntersections(grid, word, row, col, newDirection)
           const midRow = row + (newDirection === "down" ? word.length / 2 : 0)
           const midCol = col + (newDirection === "across" ? word.length / 2 : 0)
@@ -312,6 +372,7 @@ function findPlacements(
 function generateOriginal(words: WordEntry[]): CrosswordData {
   const gridSize = 80
   const grid = makeGrid(gridSize)
+  const dict = getValidWords()
   const sorted = [...words].sort((a, b) => b.word.length - a.word.length)
   const placed: GridWord[] = []
   const unplaced: WordEntry[] = []
@@ -331,7 +392,7 @@ function generateOriginal(words: WordEntry[]): CrosswordData {
 
   for (let i = 1; i < sorted.length; i++) {
     const entry = sorted[i]
-    const candidates = findPlacements(grid, gridSize, placed, entry.word, true)
+    const candidates = findPlacements(grid, gridSize, placed, entry.word, dict)
     if (candidates.length > 0) {
       candidates.sort((a, b) => b.score - a.score)
       const best = candidates[0]
@@ -351,7 +412,7 @@ function generateOriginal(words: WordEntry[]): CrosswordData {
   for (let pass = 0; pass < 3; pass++) {
     const stillUnplaced: WordEntry[] = []
     for (const entry of unplaced) {
-      const candidates = findPlacements(grid, gridSize, placed, entry.word, true)
+      const candidates = findPlacements(grid, gridSize, placed, entry.word, dict)
       if (candidates.length > 0) {
         candidates.sort((a, b) => b.score - a.score)
         const best = candidates[0]
@@ -380,6 +441,7 @@ function generateOriginal(words: WordEntry[]): CrosswordData {
 function generateCompact(words: WordEntry[]): CrosswordData {
   const gridSize = 50
   const grid = makeGrid(gridSize)
+  const dict = getValidWords()
   const sorted = [...words].sort((a, b) => b.word.length - a.word.length)
   const placed: GridWord[] = []
 
@@ -397,7 +459,7 @@ function generateCompact(words: WordEntry[]): CrosswordData {
   })
 
   const tryPlace = (entry: WordEntry): boolean => {
-    const candidates = findPlacements(grid, gridSize, placed, entry.word, false)
+    const candidates = findPlacements(grid, gridSize, placed, entry.word, dict)
     if (candidates.length === 0) return false
 
     // Re-score with compactness focus
@@ -454,9 +516,6 @@ function generateCompact(words: WordEntry[]): CrosswordData {
 
 // ─── Algorithm: Dense ────────────────────────────────────────────
 
-/**
- * Score pairwise letter overlap between two words.
- */
 function sharedLetterScore(a: string, b: string): number {
   let score = 0
   const bLetters = new Map<string, number>()
@@ -474,7 +533,6 @@ function sharedLetterScore(a: string, b: string): number {
 }
 
 function selectSeedWords(words: WordEntry[], seedCount: number): WordEntry[] {
-  // Score each word by total shared letters with all other words
   const scores = words.map((w, i) => {
     let total = 0
     for (let j = 0; j < words.length; j++) {
@@ -490,16 +548,14 @@ function selectSeedWords(words: WordEntry[], seedCount: number): WordEntry[] {
 function generateDense(words: WordEntry[]): CrosswordData {
   const gridSize = 40
   const grid = makeGrid(gridSize)
+  const dict = getValidWords()
   const placed: GridWord[] = []
 
-  // Select 6 seed words with highest letter overlap
   const seeds = selectSeedWords(words, 6)
   const remaining = words.filter((w) => !seeds.includes(w))
 
-  // Sort seeds longest first
   seeds.sort((a, b) => b.word.length - a.word.length)
 
-  // Place first seed
   const first = seeds[0]
   const centerRow = Math.floor(gridSize / 2)
   const centerCol = Math.floor((gridSize - first.word.length) / 2)
@@ -513,13 +569,12 @@ function generateDense(words: WordEntry[]): CrosswordData {
     direction: "across",
   })
 
-  // Place remaining seeds — try multiple times to get tight arrangement
+  // Place remaining seeds
   for (let i = 1; i < seeds.length; i++) {
     const entry = seeds[i]
-    const candidates = findPlacements(grid, gridSize, placed, entry.word, false)
+    const candidates = findPlacements(grid, gridSize, placed, entry.word, dict)
     if (candidates.length === 0) continue
 
-    // Score by intersections and compactness
     const currentBounds = getBoundingBox(grid)
     for (const c of candidates) {
       const testGrid = cloneGrid(grid)
@@ -542,12 +597,12 @@ function generateDense(words: WordEntry[]): CrosswordData {
     })
   }
 
-  // Grow: only place words with >= 2 intersections
+  // Grow: prefer words with >= 2 intersections, but accept 1 if compact
   const sortedRemaining = [...remaining].sort((a, b) => b.word.length - a.word.length)
   const skipped: WordEntry[] = []
 
   for (const entry of sortedRemaining) {
-    const candidates = findPlacements(grid, gridSize, placed, entry.word, false)
+    const candidates = findPlacements(grid, gridSize, placed, entry.word, dict)
     const good = candidates.filter((c) => c.intersections >= 2)
 
     if (good.length === 0) {
@@ -555,7 +610,6 @@ function generateDense(words: WordEntry[]): CrosswordData {
       continue
     }
 
-    // Score by density
     const currentBounds = getBoundingBox(grid)
     for (const c of good) {
       const testGrid = cloneGrid(grid)
@@ -579,9 +633,9 @@ function generateDense(words: WordEntry[]): CrosswordData {
     })
   }
 
-  // One more pass: try skipped words, now accepting 1 intersection if they don't expand much
+  // Final pass for skipped words with relaxed intersection requirement
   for (const entry of skipped) {
-    const candidates = findPlacements(grid, gridSize, placed, entry.word, false)
+    const candidates = findPlacements(grid, gridSize, placed, entry.word, dict)
     if (candidates.length === 0) continue
 
     const currentBounds = getBoundingBox(grid)
@@ -593,7 +647,6 @@ function generateDense(words: WordEntry[]): CrosswordData {
       const newBounds = getBoundingBox(testGrid)
       const newArea = newBounds.width * newBounds.height
       const expansion = newArea - currentArea
-      // Only accept if expansion is small
       if (expansion > 20) {
         c.score = -Infinity
       } else {
@@ -624,10 +677,10 @@ function generateDense(words: WordEntry[]): CrosswordData {
 function generateFitted(words: WordEntry[]): CrosswordData {
   const gridSize = 30
   const grid = makeGrid(gridSize)
+  const dict = getValidWords()
   const placed: GridWord[] = []
   const sorted = [...words].sort((a, b) => b.word.length - a.word.length)
 
-  // Place first word horizontally across the middle
   const first = sorted[0]
   const centerRow = Math.floor(gridSize / 2)
   const centerCol = Math.floor((gridSize - first.word.length) / 2)
@@ -645,7 +698,7 @@ function generateFitted(words: WordEntry[]): CrosswordData {
   const unplaced: WordEntry[] = []
   for (let i = 1; i < sorted.length; i++) {
     const entry = sorted[i]
-    const candidates = findPlacements(grid, gridSize, placed, entry.word, false)
+    const candidates = findPlacements(grid, gridSize, placed, entry.word, dict)
     if (candidates.length === 0) {
       unplaced.push(entry)
       continue
@@ -657,7 +710,6 @@ function generateFitted(words: WordEntry[]): CrosswordData {
       placeWord(testGrid, entry.word, c.row, c.col, c.direction)
       const newBounds = getBoundingBox(testGrid)
 
-      // Prefer placements within the current bounding box
       const withinBounds =
         c.row >= currentBounds.minRow &&
         c.col >= currentBounds.minCol &&
@@ -688,7 +740,7 @@ function generateFitted(words: WordEntry[]): CrosswordData {
   for (let pass = 0; pass < 2; pass++) {
     const stillUnplaced: WordEntry[] = []
     for (const entry of unplaced) {
-      const candidates = findPlacements(grid, gridSize, placed, entry.word, false)
+      const candidates = findPlacements(grid, gridSize, placed, entry.word, dict)
       if (candidates.length === 0) {
         stillUnplaced.push(entry)
         continue
@@ -721,147 +773,106 @@ function generateFitted(words: WordEntry[]): CrosswordData {
     if (stillUnplaced.length === 0) break
   }
 
-  // Gap-filling: scan the bounding box for gaps and find filler words from the full wordlist
+  // Gap-filling: find slots where a dictionary word fits crossing existing letters
   const bounds = getBoundingBox(grid)
   const allWords = parseWordlist()
   const placedWordSet = new Set(placed.map((p) => p.word))
 
-  // Scan for horizontal gaps
+  // Scan for horizontal filler opportunities
   for (let r = bounds.minRow; r <= bounds.maxRow; r++) {
-    let gapStart = -1
-    for (let c = bounds.minCol; c <= bounds.maxCol + 1; c++) {
-      const cell = c <= bounds.maxCol ? grid[r][c] : null
-      if (cell === null && gapStart === -1) {
-        gapStart = c
-      } else if (cell !== null && gapStart !== -1) {
-        // Found a gap from gapStart to c-1, but we want gaps between filled cells
-        gapStart = -1
-      }
-    }
-  }
-
-  // Try to fill empty rows/columns within bounds with words from the dictionary
-  for (let r = bounds.minRow; r <= bounds.maxRow; r++) {
-    // Find runs of empty cells in this row that cross at least one filled column
     for (let c = bounds.minCol; c <= bounds.maxCol; c++) {
       if (grid[r][c] !== null) continue
-      // Check if this is a valid start for an across word
       if (c > 0 && grid[r][c - 1] !== null) continue
 
-      // Find run length
-      let runLen = 0
+      // Collect pattern until we hit a dead end
       const pattern: (string | null)[] = []
-      for (
-        let cc = c;
-        cc <= bounds.maxCol && (grid[r][cc] === null || grid[r][cc] !== null);
-        cc++
-      ) {
-        if (cc > bounds.maxCol) break
+      let cc = c
+      while (cc <= bounds.maxCol) {
         pattern.push(grid[r][cc])
-        runLen++
-        // Stop if we hit a cell after the word would end
-        if (grid[r][cc] === null && cc + 1 <= bounds.maxCol && grid[r][cc + 1] === null) {
-          // Keep going only if there's a crossing letter ahead
-          let hasIntersection = false
-          for (let ahead = cc + 1; ahead <= bounds.maxCol && ahead < c + 15; ahead++) {
-            if (grid[r][ahead] !== null) {
-              hasIntersection = true
-              break
-            }
-          }
-          if (!hasIntersection) {
-            runLen = cc - c + 1
-            break
-          }
-        }
+        cc++
+        // Stop at end of bounded area
       }
 
-      if (runLen < 3 || runLen > 15) continue
+      // Try different word lengths starting at this position
+      for (let len = 3; len <= Math.min(15, pattern.length); len++) {
+        // Must end with empty or out-of-bounds (no extending)
+        if (c + len < gridSize && grid[r][c + len] !== null) continue
 
-      // Check if there are any crossing letters
-      let crossings = 0
-      for (let ci = 0; ci < runLen; ci++) {
-        if (pattern[ci] !== null) crossings++
-      }
-      if (crossings < 2) continue
-
-      // Search for a word that fits this pattern
-      const filler = allWords.find((w) => {
-        if (w.word.length !== runLen) return false
-        if (placedWordSet.has(w.word)) return false
-        for (let ci = 0; ci < runLen; ci++) {
-          if (pattern[ci] !== null && pattern[ci] !== w.word[ci]) return false
+        // Must have at least 2 crossing letters
+        let crossings = 0
+        for (let ci = 0; ci < len; ci++) {
+          if (pattern[ci] !== null) crossings++
         }
-        return isValidPlacement(grid, gridSize, w.word, r, c, "across", false)
-      })
+        if (crossings < 2) continue
 
-      if (filler) {
-        placeWord(grid, filler.word, r, c, "across")
-        placed.push({
-          word: filler.word,
-          definition: filler.definition,
-          row: r,
-          col: c,
-          direction: "across",
+        const filler = allWords.find((w) => {
+          if (w.word.length !== len) return false
+          if (placedWordSet.has(w.word)) return false
+          for (let ci = 0; ci < len; ci++) {
+            if (pattern[ci] !== null && pattern[ci] !== w.word[ci]) return false
+          }
+          return isValidPlacement(grid, gridSize, w.word, r, c, "across", dict)
         })
-        placedWordSet.add(filler.word)
+
+        if (filler) {
+          placeWord(grid, filler.word, r, c, "across")
+          placed.push({
+            word: filler.word,
+            definition: filler.definition,
+            row: r,
+            col: c,
+            direction: "across",
+          })
+          placedWordSet.add(filler.word)
+          break // Move to next position
+        }
       }
     }
   }
 
-  // Same for vertical gaps
+  // Scan for vertical filler opportunities
   for (let c = bounds.minCol; c <= bounds.maxCol; c++) {
     for (let r = bounds.minRow; r <= bounds.maxRow; r++) {
       if (grid[r][c] !== null) continue
       if (r > 0 && grid[r - 1][c] !== null) continue
 
-      let runLen = 0
       const pattern: (string | null)[] = []
-      for (let rr = r; rr <= bounds.maxRow; rr++) {
+      let rr = r
+      while (rr <= bounds.maxRow) {
         pattern.push(grid[rr][c])
-        runLen++
-        if (grid[rr][c] === null && rr + 1 <= bounds.maxRow && grid[rr + 1][c] === null) {
-          let hasIntersection = false
-          for (let ahead = rr + 1; ahead <= bounds.maxRow && ahead < r + 15; ahead++) {
-            if (grid[ahead][c] !== null) {
-              hasIntersection = true
-              break
-            }
-          }
-          if (!hasIntersection) {
-            runLen = rr - r + 1
-            break
-          }
-        }
+        rr++
       }
 
-      if (runLen < 3 || runLen > 15) continue
+      for (let len = 3; len <= Math.min(15, pattern.length); len++) {
+        if (r + len < gridSize && grid[r + len][c] !== null) continue
 
-      let crossings = 0
-      for (let ri = 0; ri < runLen; ri++) {
-        if (pattern[ri] !== null) crossings++
-      }
-      if (crossings < 2) continue
-
-      const filler = allWords.find((w) => {
-        if (w.word.length !== runLen) return false
-        if (placedWordSet.has(w.word)) return false
-        for (let ri = 0; ri < runLen; ri++) {
-          if (pattern[ri] !== null && pattern[ri] !== w.word[ri]) return false
+        let crossings = 0
+        for (let ri = 0; ri < len; ri++) {
+          if (pattern[ri] !== null) crossings++
         }
-        return isValidPlacement(grid, gridSize, w.word, r, c, "down", false)
-      })
+        if (crossings < 2) continue
 
-      if (filler) {
-        placeWord(grid, filler.word, r, c, "down")
-        placed.push({
-          word: filler.word,
-          definition: filler.definition,
-          row: r,
-          col: c,
-          direction: "down",
+        const filler = allWords.find((w) => {
+          if (w.word.length !== len) return false
+          if (placedWordSet.has(w.word)) return false
+          for (let ri = 0; ri < len; ri++) {
+            if (pattern[ri] !== null && pattern[ri] !== w.word[ri]) return false
+          }
+          return isValidPlacement(grid, gridSize, w.word, r, c, "down", dict)
         })
-        placedWordSet.add(filler.word)
+
+        if (filler) {
+          placeWord(grid, filler.word, r, c, "down")
+          placed.push({
+            word: filler.word,
+            definition: filler.definition,
+            row: r,
+            col: c,
+            direction: "down",
+          })
+          placedWordSet.add(filler.word)
+          break
+        }
       }
     }
   }
