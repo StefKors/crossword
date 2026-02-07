@@ -1,14 +1,13 @@
-import { useCallback, useState } from "react"
+import { useState } from "react"
 import { Navigate } from "react-router-dom"
 import { motion } from "motion/react"
 import { db } from "../lib/db"
 import { useIsAdmin } from "../lib/useIsAdmin"
-import { getRandomWords, parseWordlist } from "../lib/wordlist"
+import { getRandomWords, getWordsByTheme } from "../lib/wordlist"
 import { generateCrossword } from "../lib/crosswordGenerator"
 import { WordPicker } from "../features/admin/WordPicker/WordPicker"
 import { GridPreview } from "../features/admin/GridPreview/GridPreview"
 import { CrosswordSaver } from "../features/admin/CrosswordSaver/CrosswordSaver"
-import type { SearchProgress } from "../lib/semanticSearch"
 import type { CrosswordAlgorithm, CrosswordData, WordEntry } from "../types/crossword"
 import styles from "./AdminDashboard.module.css"
 
@@ -26,8 +25,6 @@ function AdminContent() {
   const [generating, setGenerating] = useState(false)
   const [algorithm, setAlgorithm] = useState<CrosswordAlgorithm>("compact")
   const [wordCount, setWordCount] = useState(25)
-  const [themeLoading, setThemeLoading] = useState(false)
-  const [themeProgress, setThemeProgress] = useState<SearchProgress | null>(null)
 
   // Fetch saved crosswords
   const { data: savedData } = db.useQuery({
@@ -42,32 +39,11 @@ function AdminContent() {
     setCrosswordData(null)
   }
 
-  const handleThemeSearch = useCallback(
-    async (theme: string) => {
-      setThemeLoading(true)
-      setThemeProgress({ stage: "loading-model", percent: 0 })
-      setCrosswordData(null)
-
-      try {
-        // Dynamic import -- Vite code-splits this into a separate chunk
-        const { searchByTheme } = await import("../lib/semanticSearch")
-
-        const allWords = parseWordlist()
-        const results = await searchByTheme(theme, allWords, wordCount, (progress) => {
-          setThemeProgress(progress)
-        })
-
-        setWords(results)
-      } catch (err) {
-        console.error("Theme search failed:", err)
-        alert("Theme search failed. Check console for details.")
-      } finally {
-        setThemeLoading(false)
-        setThemeProgress(null)
-      }
-    },
-    [wordCount],
-  )
+  const handleThemeSearch = (theme: string) => {
+    const results = getWordsByTheme(theme, wordCount)
+    setWords(results)
+    setCrosswordData(null)
+  }
 
   const handleGenerateCrossword = () => {
     if (words.length === 0) return
@@ -106,8 +82,6 @@ function AdminContent() {
             wordCount={wordCount}
             onWordCountChange={setWordCount}
             onThemeSearch={handleThemeSearch}
-            themeLoading={themeLoading}
-            themeProgress={themeProgress}
           />
 
           {words.length > 0 && (

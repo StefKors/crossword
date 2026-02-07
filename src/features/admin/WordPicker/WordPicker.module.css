@@ -19,7 +19,7 @@
   font-size: var(--text-lg);
 }
 
-/* Theme search */
+/* Theme select */
 .themeSection {
   display: flex;
   flex-direction: column;
@@ -32,16 +32,8 @@
   color: var(--color-text-secondary);
 }
 
-.themeRow {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  flex-wrap: wrap;
-}
-
 .themeSelect {
-  flex: 1;
-  min-width: 140px;
+  width: 100%;
   padding: var(--space-2) var(--space-3);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -55,100 +47,6 @@
 .themeSelect:focus {
   outline: none;
   border-color: var(--color-accent);
-}
-
-.themeDivider {
-  font-size: var(--text-xs);
-  color: var(--color-text-tertiary);
-  flex-shrink: 0;
-}
-
-.themeInput {
-  flex: 1;
-  min-width: 140px;
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: var(--color-bg);
-  color: var(--color-text);
-  font-size: var(--text-sm);
-  transition: border-color var(--transition-fast);
-}
-
-.themeInput:focus {
-  outline: none;
-  border-color: var(--color-accent);
-}
-
-.themeBtn {
-  padding: var(--space-2) var(--space-4);
-  background: var(--color-secondary);
-  color: #ffffff;
-  font-weight: var(--weight-semibold);
-  font-size: var(--text-sm);
-  border: none;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background var(--transition-fast);
-}
-
-.themeBtn:hover:not(:disabled) {
-  background: var(--color-secondary-hover);
-}
-
-.themeBtn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-/* Progress */
-.progressSection {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  margin-top: var(--space-3);
-  padding: var(--space-3);
-  background: var(--color-bg-secondary);
-  border-radius: var(--radius-md);
-}
-
-.progressHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.progressLabel {
-  font-size: var(--text-sm);
-  color: var(--color-text);
-  font-weight: var(--weight-semibold);
-}
-
-.progressPercent {
-  font-size: var(--text-sm);
-  font-family: var(--font-mono);
-  font-weight: var(--weight-semibold);
-  color: var(--color-secondary);
-}
-
-.progressTrack {
-  height: 6px;
-  background: var(--color-bg);
-  border-radius: var(--radius-full);
-  overflow: hidden;
-}
-
-.progressBar {
-  height: 100%;
-  background: var(--color-secondary);
-  border-radius: var(--radius-full);
-}
-
-.progressDetail {
-  font-size: var(--text-xs);
-  color: var(--color-text-tertiary);
-  line-height: 1.4;
 }
 
 /* Divider */

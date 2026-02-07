@@ -4,15 +4,12 @@ import react from "@vitejs/plugin-react"
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  worker: {
-    format: "es",
-  },
   build: {
     rollupOptions: {
       output: {
         manualChunks(id) {
-          // The 196K wordlist raw text (~7MB) — only needed by admin
-          if (id.includes("NWL2023.txt")) {
+          // The wordlist — only needed by admin
+          if (id.includes("NWL2023")) {
             return "wordlist"
           }
           // Crossword generator — only needed by admin
