@@ -16,10 +16,19 @@ interface WordPickerProps {
   loading?: boolean
 }
 
-const STAGE_LABELS: Record<SearchProgress["stage"], string> = {
-  "loading-model": "Loading AI model...",
-  "embedding-words": "Embedding words...",
-  searching: "Searching...",
+const STAGE_LABELS: Record<SearchProgress["stage"], { label: string; detail: string }> = {
+  "loading-model": {
+    label: "Loading AI model",
+    detail: "Downloading embedding model (~23MB, cached after first load)",
+  },
+  "embedding-words": {
+    label: "Embedding words",
+    detail: "Computing word vectors (one-time, cached in browser)",
+  },
+  searching: {
+    label: "Searching",
+    detail: "Finding the most relevant words for your theme",
+  },
 }
 
 export function WordPicker({
@@ -104,7 +113,12 @@ export function WordPicker({
 
         {themeProgress && themeLoading && (
           <div className={styles.progressSection}>
-            <span className={styles.progressLabel}>{STAGE_LABELS[themeProgress.stage]}</span>
+            <div className={styles.progressHeader}>
+              <span className={styles.progressLabel}>
+                {STAGE_LABELS[themeProgress.stage].label}
+              </span>
+              <span className={styles.progressPercent}>{themeProgress.percent}%</span>
+            </div>
             <div className={styles.progressTrack}>
               <motion.div
                 className={styles.progressBar}
@@ -113,6 +127,9 @@ export function WordPicker({
                 transition={{ duration: 0.3 }}
               />
             </div>
+            <span className={styles.progressDetail}>
+              {STAGE_LABELS[themeProgress.stage].detail}
+            </span>
           </div>
         )}
       </div>

@@ -106,19 +106,35 @@
 .progressSection {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
-  margin-top: var(--space-2);
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-md);
+}
+
+.progressHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .progressLabel {
-  font-size: var(--text-xs);
-  color: var(--color-text-secondary);
-  font-weight: var(--weight-medium);
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  font-weight: var(--weight-semibold);
+}
+
+.progressPercent {
+  font-size: var(--text-sm);
+  font-family: var(--font-mono);
+  font-weight: var(--weight-semibold);
+  color: var(--color-secondary);
 }
 
 .progressTrack {
-  height: 4px;
-  background: var(--color-bg-secondary);
+  height: 6px;
+  background: var(--color-bg);
   border-radius: var(--radius-full);
   overflow: hidden;
 }
@@ -127,6 +143,12 @@
   height: 100%;
   background: var(--color-secondary);
   border-radius: var(--radius-full);
+}
+
+.progressDetail {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  line-height: 1.4;
 }
 
 /* Divider */
