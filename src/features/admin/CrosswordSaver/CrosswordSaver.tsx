@@ -10,12 +10,32 @@ interface CrosswordSaverProps {
   userId: string
 }
 
+function formatDateTitle(dateStr: string): string {
+  // Parse YYYY-MM-DD as local date (avoid timezone offset by splitting)
+  const [year, month, day] = dateStr.split("-").map(Number)
+  const d = new Date(year, month - 1, day)
+  return d.toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  })
+}
+
 export function CrosswordSaver({ data, userId }: CrosswordSaverProps) {
   const today = new Date().toISOString().split("T")[0]
-  const [title, setTitle] = useState("")
+  const [title, setTitle] = useState(() => formatDateTitle(today))
   const [date, setDate] = useState(today)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+
+  const handleDateChange = (newDate: string) => {
+    setDate(newDate)
+    // Update title to match new date if it's still a date-formatted title
+    if (newDate) {
+      setTitle(formatDateTitle(newDate))
+    }
+  }
 
   const handleSave = async () => {
     if (!title || !date) return
@@ -60,7 +80,7 @@ export function CrosswordSaver({ data, userId }: CrosswordSaverProps) {
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="e.g. Monday Challenge"
+            placeholder="e.g. Monday, February 7, 2026"
             className={styles.input}
           />
         </div>
@@ -73,7 +93,7 @@ export function CrosswordSaver({ data, userId }: CrosswordSaverProps) {
             id="cw-date"
             type="date"
             value={date}
-            onChange={(e) => setDate(e.target.value)}
+            onChange={(e) => handleDateChange(e.target.value)}
             className={styles.input}
           />
         </div>
