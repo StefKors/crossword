@@ -1,0 +1,130 @@
+/* Design Tokens — NYT Crossplay + Spark inspired */
+
+/* Light theme (default) */
+[data-theme="light"],
+:root {
+  /* Backgrounds */
+  --color-bg: #fafaf8;
+  --color-bg-secondary: #f0eeeb;
+  --color-bg-elevated: #ffffff;
+
+  /* Text */
+  --color-text: #1a1a1a;
+  --color-text-secondary: #5a5a58;
+  --color-text-tertiary: #8a8a87;
+
+  /* Accent */
+  --color-accent: #e86c4f;
+  --color-accent-hover: #d45a3e;
+  --color-accent-light: #fde8e2;
+  --color-secondary: #2ba5b5;
+  --color-secondary-hover: #2393a2;
+  --color-secondary-light: #e0f4f7;
+
+  /* Status */
+  --color-success: #6bbf6b;
+  --color-error: #d94f4f;
+  --color-error-light: #fde8e8;
+
+  /* Grid */
+  --color-grid-cell: #ffffff;
+  --color-grid-border: #333333;
+  --color-grid-highlight: #ffe066;
+  --color-grid-highlight-secondary: #fff4c2;
+  --color-grid-black: #1a1a1a;
+
+  /* UI */
+  --color-border: #ddd9d5;
+  --color-border-hover: #c5c0bb;
+  --color-shadow: rgba(0, 0, 0, 0.08);
+}
+
+/* Dark theme */
+[data-theme="dark"] {
+  /* Backgrounds */
+  --color-bg: #1a1a1a;
+  --color-bg-secondary: #242424;
+  --color-bg-elevated: #2e2e2e;
+
+  /* Text */
+  --color-text: #f0f0ec;
+  --color-text-secondary: #b0b0ab;
+  --color-text-tertiary: #787874;
+
+  /* Accent */
+  --color-accent: #f08060;
+  --color-accent-hover: #f59478;
+  --color-accent-light: #3d2820;
+  --color-secondary: #3cc0d0;
+  --color-secondary-hover: #50d0de;
+  --color-secondary-light: #1a3035;
+
+  /* Status */
+  --color-success: #7dd07d;
+  --color-error: #e06060;
+  --color-error-light: #3d2020;
+
+  /* Grid */
+  --color-grid-cell: #2a2a2a;
+  --color-grid-border: #555555;
+  --color-grid-highlight: #5c4a00;
+  --color-grid-highlight-secondary: #3d3200;
+  --color-grid-black: #000000;
+
+  /* UI */
+  --color-border: #3a3a3a;
+  --color-border-hover: #4a4a4a;
+  --color-shadow: rgba(0, 0, 0, 0.3);
+}
+
+/* Typography */
+:root {
+  --font-serif: Georgia, "Times New Roman", serif;
+  --font-sans: Inter, system-ui, -apple-system, sans-serif;
+  --font-mono: "SF Mono", "Fira Code", monospace;
+
+  /* Font sizes */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 2rem;
+
+  /* Font weights */
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+
+  /* Grid */
+  --grid-cell-size: 40px;
+  --grid-border-width: 2px;
+
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-base: 250ms ease;
+
+  /* Layout */
+  --header-height: 60px;
+  --max-content-width: 1200px;
+}

@@ -1,6 +1,6 @@
 // Docs: https://www.instantdb.com/docs/permissions
 
-import type { InstantRules } from "@instantdb/react";
+import type { InstantRules } from "@instantdb/react"
 
 const rules = {
   /**
@@ -19,6 +19,6 @@ const rules = {
    *   bind: {"isOwner": "auth.id != null && auth.id == data.ownerId"},
    * },
    */
-} satisfies InstantRules;
+} satisfies InstantRules
 
-export default rules;
+export default rules

@@ -1,6 +1,6 @@
 // Docs: https://www.instantdb.com/docs/modeling-data
 
-import { i } from "@instantdb/react";
+import { i } from "@instantdb/react"
 
 const _schema = i.schema({
   entities: {
@@ -30,12 +30,12 @@ const _schema = i.schema({
     },
   },
   rooms: {},
-});
+})
 
 // This helps TypeScript display nicer intellisense
-type _AppSchema = typeof _schema;
+type _AppSchema = typeof _schema
 interface AppSchema extends _AppSchema {}
-const schema: AppSchema = _schema;
+const schema: AppSchema = _schema
 
-export type { AppSchema };
-export default schema;
+export type { AppSchema }
+export default schema
