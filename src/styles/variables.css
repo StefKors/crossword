@@ -80,7 +80,7 @@
 /* Typography */
 :root {
   --font-serif: "Young Serif", Georgia, "Times New Roman", serif;
-  --font-sans: "Fredoka", Inter, system-ui, -apple-system, sans-serif;
+  --font-sans: "SF Pro Rounded", "SF Pro", Inter, system-ui, -apple-system, sans-serif;
   --font-mono: "SF Mono", "Fira Code", monospace;
 
   /* Font sizes */
