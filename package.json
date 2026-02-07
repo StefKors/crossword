@@ -12,7 +12,11 @@
     "format": "oxfmt",
     "format:check": "oxfmt --check",
     "check": "bun run lint && bun run format:check",
-    "fix": "bun run lint:fix && bun run format"
+    "fix": "bun run lint:fix && bun run format",
+    "db:push": "npx instant-cli push schema --yes",
+    "db:push:perms": "npx instant-cli push perms --yes",
+    "db:push:all": "bun run db:push && bun run db:push:perms",
+    "db:pull": "npx instant-cli pull --yes"
   },
   "dependencies": {
     "@base-ui-components/react": "^1.0.0-rc.0",
