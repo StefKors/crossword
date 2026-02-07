@@ -87,6 +87,11 @@ function AdminContent() {
     await db.transact(db.tx.crosswords[crosswordId].update({ status: "draft" }))
   }
 
+  const handleDelete = async (crosswordId: string) => {
+    if (!confirm("Delete this crossword? This cannot be undone.")) return
+    await db.transact(db.tx.crosswords[crosswordId].delete())
+  }
+
   const savedCrosswords = savedData?.crosswords ?? []
 
   return (
@@ -170,6 +175,15 @@ function AdminContent() {
                         whileTap={{ scale: 0.97 }}
                       >
                         {cw.status === "published" ? "Unpublish" : "Publish"}
+                      </motion.button>
+                      <motion.button
+                        className={styles.deleteBtn}
+                        onClick={() => handleDelete(cw.id)}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.97 }}
+                        aria-label="Delete crossword"
+                      >
+                        Delete
                       </motion.button>
                     </div>
                   </div>
