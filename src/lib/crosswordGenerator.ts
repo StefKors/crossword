@@ -884,7 +884,7 @@ function generateFitted(words: WordEntry[]): CrosswordData {
 
 export function generateCrossword(
   words: WordEntry[],
-  algorithm: CrosswordAlgorithm = "compact",
+  algorithm: CrosswordAlgorithm = "fitted",
 ): CrosswordData {
   switch (algorithm) {
     case "original":

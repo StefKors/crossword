@@ -23,7 +23,7 @@ function AdminContent() {
   const [words, setWords] = useState<WordEntry[]>([])
   const [crosswordData, setCrosswordData] = useState<CrosswordData | null>(null)
   const [generating, setGenerating] = useState(false)
-  const [algorithm, setAlgorithm] = useState<CrosswordAlgorithm>("compact")
+  const [algorithm, setAlgorithm] = useState<CrosswordAlgorithm>("fitted")
   const [wordCount, setWordCount] = useState(25)
 
   // Fetch saved crosswords
