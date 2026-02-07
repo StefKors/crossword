@@ -8,14 +8,22 @@ import { generateCrossword } from "../lib/crosswordGenerator"
 import { WordPicker } from "../features/admin/WordPicker/WordPicker"
 import { GridPreview } from "../features/admin/GridPreview/GridPreview"
 import { CrosswordSaver } from "../features/admin/CrosswordSaver/CrosswordSaver"
-import type { CrosswordData, WordEntry } from "../types/crossword"
+import type { CrosswordAlgorithm, CrosswordData, WordEntry } from "../types/crossword"
 import styles from "./AdminDashboard.module.css"
+
+const ALGORITHMS: { value: CrosswordAlgorithm; label: string; description: string }[] = [
+  { value: "compact", label: "Compact", description: "Tight grid, relaxed adjacency" },
+  { value: "dense", label: "Dense", description: "Seed cluster, high overlap" },
+  { value: "fitted", label: "Fitted", description: "Gap-filling, dictionary scan" },
+  { value: "original", label: "Original", description: "Strict adjacency, greedy" },
+]
 
 function AdminContent() {
   const user = db.useUser()
   const [words, setWords] = useState<WordEntry[]>([])
   const [crosswordData, setCrosswordData] = useState<CrosswordData | null>(null)
   const [generating, setGenerating] = useState(false)
+  const [algorithm, setAlgorithm] = useState<CrosswordAlgorithm>("compact")
 
   // Fetch saved crosswords
   const { data: savedData } = db.useQuery({
@@ -33,9 +41,8 @@ function AdminContent() {
   const handleGenerateCrossword = () => {
     if (words.length === 0) return
     setGenerating(true)
-    // Use setTimeout to avoid blocking the UI during generation
     setTimeout(() => {
-      const data = generateCrossword(words)
+      const data = generateCrossword(words, algorithm)
       setCrosswordData(data)
       setGenerating(false)
     }, 50)
@@ -60,24 +67,44 @@ function AdminContent() {
           <WordPicker words={words} onGenerate={handleGenerateWords} />
 
           {words.length > 0 && (
-            <motion.button
-              className={styles.buildBtn}
-              onClick={handleGenerateCrossword}
-              disabled={generating}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.97 }}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              {generating ? "Generating Crossword..." : "Generate Crossword"}
-            </motion.button>
+            <div className={styles.generateSection}>
+              <div className={styles.algoSelector}>
+                <span className={styles.algoLabel}>Algorithm</span>
+                <div className={styles.algoOptions}>
+                  {ALGORITHMS.map((algo) => (
+                    <button
+                      key={algo.value}
+                      className={`${styles.algoOption} ${algorithm === algo.value ? styles.algoActive : ""}`}
+                      onClick={() => setAlgorithm(algo.value)}
+                      title={algo.description}
+                    >
+                      {algo.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <motion.button
+                className={styles.buildBtn}
+                onClick={handleGenerateCrossword}
+                disabled={generating}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.97 }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
+                {generating ? "Generating Crossword..." : "Generate Crossword"}
+              </motion.button>
+            </div>
           )}
 
           {crosswordData && <CrosswordSaver data={crosswordData} userId={user.id} />}
         </div>
 
         <div className={styles.right}>
-          {crosswordData && <GridPreview data={crosswordData} />}
+          {crosswordData && (
+            <GridPreview data={crosswordData} algorithm={algorithm} totalWords={words.length} />
+          )}
 
           {savedCrosswords.length > 0 && (
             <div className={styles.savedSection}>

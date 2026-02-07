@@ -23,4 +23,6 @@ export interface WordEntry {
 
 export type PuzzleMode = "fillin" | "classic"
 
+export type CrosswordAlgorithm = "original" | "compact" | "dense" | "fitted"
+
 export type CellState = Record<string, string>
