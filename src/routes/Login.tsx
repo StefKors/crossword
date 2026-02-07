@@ -1,10 +1,18 @@
 import { useState } from "react"
+import { Navigate, useNavigate } from "react-router-dom"
 import { motion } from "motion/react"
 import { db } from "../lib/db"
 import styles from "./Login.module.css"
 
 export function Login() {
+  const { user } = db.useAuth()
+  const navigate = useNavigate()
   const [sentEmail, setSentEmail] = useState("")
+
+  // Already logged in — redirect to home
+  if (user) {
+    return <Navigate to="/" replace />
+  }
 
   return (
     <div className={styles.page}>
@@ -18,7 +26,11 @@ export function Login() {
         {!sentEmail ? (
           <EmailStep onSendEmail={setSentEmail} />
         ) : (
-          <CodeStep sentEmail={sentEmail} onBack={() => setSentEmail("")} />
+          <CodeStep
+            sentEmail={sentEmail}
+            onBack={() => setSentEmail("")}
+            onSuccess={() => navigate("/")}
+          />
         )}
       </motion.div>
     </div>
@@ -69,7 +81,15 @@ function EmailStep({ onSendEmail }: { onSendEmail: (email: string) => void }) {
   )
 }
 
-function CodeStep({ sentEmail, onBack }: { sentEmail: string; onBack: () => void }) {
+function CodeStep({
+  sentEmail,
+  onBack,
+  onSuccess,
+}: {
+  sentEmail: string
+  onBack: () => void
+  onSuccess: () => void
+}) {
   const [code, setCode] = useState("")
   const [loading, setLoading] = useState(false)
 
@@ -77,11 +97,14 @@ function CodeStep({ sentEmail, onBack }: { sentEmail: string; onBack: () => void
     e.preventDefault()
     if (!code) return
     setLoading(true)
-    db.auth.signInWithMagicCode({ email: sentEmail, code }).catch((err) => {
-      setCode("")
-      setLoading(false)
-      alert("Error: " + (err.body?.message ?? err.message))
-    })
+    db.auth
+      .signInWithMagicCode({ email: sentEmail, code })
+      .then(() => onSuccess())
+      .catch((err) => {
+        setCode("")
+        setLoading(false)
+        alert("Error: " + (err.body?.message ?? err.message))
+      })
   }
 
   return (
