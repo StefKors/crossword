@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@instantdb/react": "^0.22.126",
+    "motion": "^12.33.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
