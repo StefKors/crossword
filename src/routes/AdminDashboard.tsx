@@ -2,6 +2,7 @@ import { useState } from "react"
 import { Navigate } from "react-router-dom"
 import { motion } from "motion/react"
 import { db } from "../lib/db"
+import { useIsAdmin } from "../lib/useIsAdmin"
 import { getRandomWords } from "../lib/wordlist"
 import { generateCrossword } from "../lib/crosswordGenerator"
 import { WordPicker } from "../features/admin/WordPicker/WordPicker"
@@ -117,9 +118,10 @@ function AdminContent() {
 }
 
 export function AdminDashboard() {
-  const { isLoading, user } = db.useAuth()
+  const { isLoading: authLoading, user } = db.useAuth()
+  const { isAdmin, isLoading: adminLoading } = useIsAdmin()
 
-  if (isLoading) {
+  if (authLoading || adminLoading) {
     return (
       <div className={styles.loading}>
         <p>Loading...</p>
@@ -129,6 +131,15 @@ export function AdminDashboard() {
 
   if (!user) {
     return <Navigate to="/login" replace />
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className={styles.unauthorized}>
+        <h2>Unauthorized</h2>
+        <p>You don&apos;t have admin access.</p>
+      </div>
+    )
   }
 
   return <AdminContent />

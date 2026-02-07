@@ -2,11 +2,13 @@ import { Link, useLocation } from "react-router-dom"
 import { motion } from "motion/react"
 import { ThemeToggle } from "../ThemeToggle/ThemeToggle"
 import { db } from "../../lib/db"
+import { useIsAdmin } from "../../lib/useIsAdmin"
 import styles from "./Header.module.css"
 
 export function Header() {
   const location = useLocation()
   const { user } = db.useAuth()
+  const { isAdmin } = useIsAdmin()
 
   return (
     <header className={styles.header}>
@@ -17,7 +19,7 @@ export function Header() {
 
         <nav className={styles.nav}>
           <NavLink to="/" label="Daily" active={location.pathname === "/"} />
-          {user && <NavLink to="/admin" label="Admin" active={location.pathname === "/admin"} />}
+          {isAdmin && <NavLink to="/admin" label="Admin" active={location.pathname === "/admin"} />}
         </nav>
 
         <div className={styles.actions}>
