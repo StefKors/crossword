@@ -15,6 +15,7 @@
     "fix": "bun run lint:fix && bun run format"
   },
   "dependencies": {
+    "@instantdb/react": "^0.22.126",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
