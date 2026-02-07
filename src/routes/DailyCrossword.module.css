@@ -31,11 +31,12 @@
   display: grid;
   gap: var(--space-6);
   align-items: start;
+  justify-content: center;
 }
 
 /* Classic: clues left, grid right */
 .classicLayout {
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 400px min-content;
 }
 
 .classicLayout .clueSection {
@@ -48,7 +49,7 @@
 
 /* Fill-it-in: grid left, word list right */
 .fillinLayout {
-  grid-template-columns: auto 1fr;
+  grid-template-columns: min-content 400px;
 }
 
 .fillinLayout .gridSection {
