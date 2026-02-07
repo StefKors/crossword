@@ -65,6 +65,78 @@ export function useCrosswordInteraction(
     [data],
   )
 
+  /**
+   * Find the next valid cell in a direction, skipping over black squares.
+   * If we go past the edge of the grid, wrap to the next row/column.
+   * Returns null if no valid cell is found (shouldn't happen in a normal grid).
+   */
+  const findNextValidCell = useCallback(
+    (
+      startRow: number,
+      startCol: number,
+      dir: "up" | "down" | "left" | "right",
+    ): { row: number; col: number } | null => {
+      let row = startRow
+      let col = startCol
+
+      // Try scanning in the given direction, wrapping rows/columns
+      for (let attempts = 0; attempts < data.width * data.height; attempts++) {
+        switch (dir) {
+          case "right":
+            col++
+            if (col >= data.width) {
+              col = 0
+              row++
+              if (row >= data.height) row = 0
+            }
+            break
+          case "left":
+            col--
+            if (col < 0) {
+              col = data.width - 1
+              row--
+              if (row < 0) row = data.height - 1
+            }
+            break
+          case "down":
+            row++
+            if (row >= data.height) {
+              row = 0
+              col++
+              if (col >= data.width) col = 0
+            }
+            break
+          case "up":
+            row--
+            if (row < 0) {
+              row = data.height - 1
+              col--
+              if (col < 0) col = data.width - 1
+            }
+            break
+        }
+
+        if (isValidCell(row, col)) {
+          return { row, col }
+        }
+      }
+      return null
+    },
+    [data, isValidCell],
+  )
+
+  /** Find the first valid cell in reading order */
+  const findFirstCell = useCallback((): { row: number; col: number } | null => {
+    for (let r = 0; r < data.height; r++) {
+      for (let c = 0; c < data.width; c++) {
+        if (data.grid[r][c] !== null) {
+          return { row: r, col: c }
+        }
+      }
+    }
+    return null
+  }, [data])
+
   const onCellSelect = useCallback(
     (row: number, col: number) => {
       if (!isValidCell(row, col)) return
@@ -79,30 +151,6 @@ export function useCrosswordInteraction(
     [selectedCell, isValidCell],
   )
 
-  const moveToNextCell = useCallback(
-    (row: number, col: number, dir: Direction): { row: number; col: number } | null => {
-      const nextRow = dir === "down" ? row + 1 : row
-      const nextCol = dir === "across" ? col + 1 : col
-      if (isValidCell(nextRow, nextCol)) {
-        return { row: nextRow, col: nextCol }
-      }
-      return null
-    },
-    [isValidCell],
-  )
-
-  const moveToPrevCell = useCallback(
-    (row: number, col: number, dir: Direction): { row: number; col: number } | null => {
-      const prevRow = dir === "down" ? row - 1 : row
-      const prevCol = dir === "across" ? col - 1 : col
-      if (isValidCell(prevRow, prevCol)) {
-        return { row: prevRow, col: prevCol }
-      }
-      return null
-    },
-    [isValidCell],
-  )
-
   const onCellInput = useCallback(
     (row: number, col: number, value: string) => {
       const key = `${row},${col}`
@@ -110,13 +158,14 @@ export function useCrosswordInteraction(
       setCellValuesState(next)
       onCellChange?.(next)
 
-      // Auto-advance to next cell in current direction
-      const nextCell = moveToNextCell(row, col, selectedDirection)
+      // Auto-advance to next cell in current direction, skipping gaps
+      const advanceDir = selectedDirection === "across" ? "right" : "down"
+      const nextCell = findNextValidCell(row, col, advanceDir as "right" | "down")
       if (nextCell) {
         setSelectedCell(nextCell)
       }
     },
-    [cellValues, selectedDirection, moveToNextCell, onCellChange],
+    [cellValues, selectedDirection, findNextValidCell, onCellChange],
   )
 
   const onBackspace = useCallback(() => {
@@ -124,13 +173,14 @@ export function useCrosswordInteraction(
     const key = `${selectedCell.row},${selectedCell.col}`
 
     if (cellValues[key]) {
-      // Clear current cell — use empty string so the change persists via merge
+      // Clear current cell
       const next = { ...cellValues, [key]: "" }
       setCellValuesState(next)
       onCellChange?.(next)
     } else {
       // Move back and clear that cell
-      const prev = moveToPrevCell(selectedCell.row, selectedCell.col, selectedDirection)
+      const backDir = selectedDirection === "across" ? "left" : "up"
+      const prev = findNextValidCell(selectedCell.row, selectedCell.col, backDir as "left" | "up")
       if (prev) {
         const prevKey = `${prev.row},${prev.col}`
         const next = { ...cellValues, [prevKey]: "" }
@@ -139,30 +189,20 @@ export function useCrosswordInteraction(
         setSelectedCell(prev)
       }
     }
-  }, [selectedCell, cellValues, selectedDirection, moveToPrevCell, onCellChange])
+  }, [selectedCell, cellValues, selectedDirection, findNextValidCell, onCellChange])
 
   const onNavigate = useCallback(
     (dir: "up" | "down" | "left" | "right") => {
-      if (!selectedCell) return
-      let { row, col } = selectedCell
-
-      switch (dir) {
-        case "up":
-          row--
-          break
-        case "down":
-          row++
-          break
-        case "left":
-          col--
-          break
-        case "right":
-          col++
-          break
+      if (!selectedCell) {
+        // No cell selected — select first cell
+        const first = findFirstCell()
+        if (first) setSelectedCell(first)
+        return
       }
 
-      if (isValidCell(row, col)) {
-        setSelectedCell({ row, col })
+      const next = findNextValidCell(selectedCell.row, selectedCell.col, dir)
+      if (next) {
+        setSelectedCell(next)
         // Update direction based on arrow key
         if (dir === "left" || dir === "right") {
           setSelectedDirection("across")
@@ -171,51 +211,21 @@ export function useCrosswordInteraction(
         }
       }
     },
-    [selectedCell, isValidCell],
+    [selectedCell, findNextValidCell, findFirstCell],
   )
 
   const onTab = useCallback(
-    (shift: boolean) => {
-      // Move to next/previous word
-      const sortedWords = [...data.words].sort((a, b) => {
-        if (a.row !== b.row) return a.row - b.row
-        return a.col - b.col
-      })
-
-      if (sortedWords.length === 0) return
-
-      // Find current word index
-      let currentIdx = -1
-      if (selectedCell) {
-        currentIdx = sortedWords.findIndex((w) => {
-          if (w.direction !== selectedDirection) return false
-          if (w.direction === "across") {
-            return (
-              w.row === selectedCell.row &&
-              selectedCell.col >= w.col &&
-              selectedCell.col < w.col + w.word.length
-            )
-          }
-          return (
-            w.col === selectedCell.col &&
-            selectedCell.row >= w.row &&
-            selectedCell.row < w.row + w.word.length
-          )
-        })
+    (_shift: boolean) => {
+      if (!selectedCell) {
+        const first = findFirstCell()
+        if (first) setSelectedCell(first)
+        return
       }
 
-      let nextIdx: number
-      if (shift) {
-        nextIdx = currentIdx <= 0 ? sortedWords.length - 1 : currentIdx - 1
-      } else {
-        nextIdx = currentIdx >= sortedWords.length - 1 ? 0 : currentIdx + 1
-      }
-
-      const nextWord = sortedWords[nextIdx]
-      setSelectedCell({ row: nextWord.row, col: nextWord.col })
-      setSelectedDirection(nextWord.direction)
+      // Toggle direction on current cell
+      setSelectedDirection((d) => (d === "across" ? "down" : "across"))
     },
-    [data.words, selectedCell, selectedDirection],
+    [selectedCell, findFirstCell],
   )
 
   return {

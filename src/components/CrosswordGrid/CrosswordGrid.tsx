@@ -50,14 +50,19 @@ export function CrosswordGrid({
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      if (!interactive || !selectedCell) return
+      if (!interactive) return
 
       if (e.key.length === 1 && /^[a-zA-Z]$/.test(e.key)) {
         e.preventDefault()
-        onCellInput?.(selectedCell.row, selectedCell.col, e.key.toUpperCase())
+        if (selectedCell) {
+          onCellInput?.(selectedCell.row, selectedCell.col, e.key.toUpperCase())
+        } else {
+          // Auto-select first cell and type into it
+          onNavigate?.("right")
+        }
       } else if (e.key === "Backspace") {
         e.preventDefault()
-        onBackspace?.()
+        if (selectedCell) onBackspace?.()
       } else if (e.key === "ArrowUp") {
         e.preventDefault()
         onNavigate?.("up")
@@ -111,7 +116,14 @@ export function CrosswordGrid({
             <motion.div
               key={key}
               className={`${styles.cell} ${isBlack ? styles.black : ""} ${isSelected ? styles.selected : ""} ${isHighlighted ? styles.highlighted : ""}`}
-              onClick={interactive && !isBlack ? () => onCellSelect?.(r, c) : undefined}
+              onClick={
+                interactive && !isBlack
+                  ? () => {
+                      onCellSelect?.(r, c)
+                      gridRef.current?.focus()
+                    }
+                  : undefined
+              }
               whileTap={interactive && !isBlack ? { scale: 0.95 } : undefined}
               role={interactive && !isBlack ? "gridcell" : undefined}
               aria-label={
