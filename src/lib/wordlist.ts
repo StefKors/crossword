@@ -1,4 +1,5 @@
 import themedData from "../assets/wordlist/NWL2023-themed.json"
+import rawPlayability from "../assets/wordlist/NSWL2023-Playability.txt?raw"
 import type { WordEntry } from "../types/crossword"
 
 interface ThemedWord {
@@ -15,6 +16,40 @@ interface ThemedWordlist {
 const data = themedData as ThemedWordlist
 
 let cachedEntries: WordEntry[] | null = null
+let cachedPlayability: Map<string, number> | null = null
+
+/**
+ * Parse playability scores from NSWL2023-Playability.txt.
+ * Format: "  SCORE WORD" per line. Higher = more commonly known.
+ * Cached after first call.
+ */
+export function getPlayabilityMap(): Map<string, number> {
+  if (cachedPlayability) return cachedPlayability
+
+  cachedPlayability = new Map()
+  const lines = rawPlayability.split("\n")
+  for (const line of lines) {
+    const trimmed = line.trim()
+    if (!trimmed) continue
+    const spaceIdx = trimmed.indexOf(" ")
+    if (spaceIdx === -1) continue
+    const score = parseInt(trimmed.slice(0, spaceIdx), 10)
+    const word = trimmed.slice(spaceIdx + 1).trim()
+    if (word && !isNaN(score)) {
+      cachedPlayability.set(word, score)
+    }
+  }
+
+  return cachedPlayability
+}
+
+/**
+ * Get the playability score for a word. Higher = more common/recognizable.
+ * Returns 0 if the word is not in the playability list.
+ */
+export function getPlayabilityScore(word: string): number {
+  return getPlayabilityMap().get(word) ?? 0
+}
 
 /**
  * Get all words as WordEntry[]. Results are cached after first call.

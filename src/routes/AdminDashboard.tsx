@@ -4,7 +4,8 @@ import { motion } from "motion/react"
 import { db } from "../lib/db"
 import { useIsAdmin } from "../lib/useIsAdmin"
 import { getRandomWords, getWordsByTheme } from "../lib/wordlist"
-import { generateCrossword } from "../lib/crosswordGenerator"
+import { generateCrosswordAsync } from "../lib/crosswordGenerator"
+import type { GenerationProgress } from "../lib/crosswordGenerator"
 import { WordPicker } from "../features/admin/WordPicker/WordPicker"
 import { GridPreview } from "../features/admin/GridPreview/GridPreview"
 import { CrosswordSaver } from "../features/admin/CrosswordSaver/CrosswordSaver"
@@ -12,9 +13,10 @@ import type { CrosswordAlgorithm, CrosswordData, WordEntry } from "../types/cros
 import styles from "./AdminDashboard.module.css"
 
 const ALGORITHMS: { value: CrosswordAlgorithm; label: string; description: string }[] = [
-  { value: "compact", label: "Compact", description: "Tight grid, relaxed adjacency" },
-  { value: "dense", label: "Dense", description: "Seed cluster, high overlap" },
+  { value: "smart", label: "Smart", description: "Multi-attempt, playability-optimized" },
   { value: "fitted", label: "Fitted", description: "Gap-filling, dictionary scan" },
+  { value: "compact", label: "Compact", description: "Tight grid, compactness scoring" },
+  { value: "dense", label: "Dense", description: "Seed cluster, high overlap" },
   { value: "original", label: "Original", description: "Strict adjacency, greedy" },
 ]
 
@@ -23,7 +25,8 @@ function AdminContent() {
   const [words, setWords] = useState<WordEntry[]>([])
   const [crosswordData, setCrosswordData] = useState<CrosswordData | null>(null)
   const [generating, setGenerating] = useState(false)
-  const [algorithm, setAlgorithm] = useState<CrosswordAlgorithm>("compact")
+  const [genProgress, setGenProgress] = useState<GenerationProgress | null>(null)
+  const [algorithm, setAlgorithm] = useState<CrosswordAlgorithm>("smart")
   const [wordCount, setWordCount] = useState(25)
 
   // Fetch saved crosswords
@@ -45,14 +48,23 @@ function AdminContent() {
     setCrosswordData(null)
   }
 
-  const handleGenerateCrossword = () => {
+  const handleGenerateCrossword = async () => {
     if (words.length === 0) return
     setGenerating(true)
-    setTimeout(() => {
-      const data = generateCrossword(words, algorithm)
+    setGenProgress(null)
+
+    try {
+      const data = await generateCrosswordAsync(words, algorithm, (progress) => {
+        setGenProgress(progress)
+      })
       setCrosswordData(data)
+    } catch (err) {
+      console.error("Generation failed:", err)
+      alert("Crossword generation failed. Check console for details.")
+    } finally {
       setGenerating(false)
-    }, 50)
+      setGenProgress(null)
+    }
   }
 
   const handlePublish = async (crosswordId: string) => {
@@ -104,14 +116,18 @@ function AdminContent() {
 
               <motion.button
                 className={styles.buildBtn}
-                onClick={handleGenerateCrossword}
+                onClick={() => void handleGenerateCrossword()}
                 disabled={generating}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.97 }}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
               >
-                {generating ? "Generating Crossword..." : "Generate Crossword"}
+                {generating
+                  ? genProgress
+                    ? genProgress.message
+                    : "Generating Crossword..."
+                  : "Generate Crossword"}
               </motion.button>
             </div>
           )}

@@ -14,6 +14,7 @@ export interface CrosswordData {
   words: PlacedWord[]
   width: number
   height: number
+  avgPlayability?: number
 }
 
 export interface WordEntry {
@@ -23,6 +24,6 @@ export interface WordEntry {
 
 export type PuzzleMode = "fillin" | "classic"
 
-export type CrosswordAlgorithm = "original" | "compact" | "dense" | "fitted"
+export type CrosswordAlgorithm = "original" | "compact" | "dense" | "fitted" | "smart"
 
 export type CellState = Record<string, string>

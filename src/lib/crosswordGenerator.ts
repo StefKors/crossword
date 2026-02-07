@@ -5,7 +5,7 @@ import type {
   PlacedWord,
   WordEntry,
 } from "../types/crossword"
-import { parseWordlist } from "./wordlist"
+import { parseWordlist, getPlayabilityScore } from "./wordlist"
 
 // ─── Shared types ────────────────────────────────────────────────
 
@@ -322,7 +322,14 @@ function finalize(grid: Grid, placed: GridWord[]): CrosswordData {
 
   const finalWords = assignClueNumbers(adjustedWords, width, height)
 
-  return { grid: trimmedGrid, words: finalWords, width, height }
+  // Compute average playability
+  let totalPlay = 0
+  for (const w of finalWords) {
+    totalPlay += getPlayabilityScore(w.word)
+  }
+  const avgPlayability = finalWords.length > 0 ? Math.round(totalPlay / finalWords.length) : 0
+
+  return { grid: trimmedGrid, words: finalWords, width, height, avgPlayability }
 }
 
 function findPlacements(
@@ -356,7 +363,8 @@ function findPlacements(
           const midRow = row + (newDirection === "down" ? word.length / 2 : 0)
           const midCol = col + (newDirection === "across" ? word.length / 2 : 0)
           const distFromCenter = Math.abs(midRow - center) + Math.abs(midCol - center)
-          const score = intersections * 10 - distFromCenter
+          const playability = getPlayabilityScore(word)
+          const score = intersections * 10 - distFromCenter + Math.log(playability + 1) * 2
 
           candidates.push({ row, col, direction: newDirection, intersections, score })
         }
@@ -805,14 +813,18 @@ function generateFitted(words: WordEntry[]): CrosswordData {
         }
         if (crossings < 2) continue
 
-        const filler = allWords.find((w) => {
-          if (w.word.length !== len) return false
-          if (placedWordSet.has(w.word)) return false
-          for (let ci = 0; ci < len; ci++) {
-            if (pattern[ci] !== null && pattern[ci] !== w.word[ci]) return false
-          }
-          return isValidPlacement(grid, gridSize, w.word, r, c, "across", dict)
-        })
+        const filler = findBestFiller(
+          allWords,
+          placedWordSet,
+          pattern,
+          len,
+          grid,
+          gridSize,
+          r,
+          c,
+          "across",
+          dict,
+        )
 
         if (filler) {
           placeWord(grid, filler.word, r, c, "across")
@@ -852,14 +864,18 @@ function generateFitted(words: WordEntry[]): CrosswordData {
         }
         if (crossings < 2) continue
 
-        const filler = allWords.find((w) => {
-          if (w.word.length !== len) return false
-          if (placedWordSet.has(w.word)) return false
-          for (let ri = 0; ri < len; ri++) {
-            if (pattern[ri] !== null && pattern[ri] !== w.word[ri]) return false
-          }
-          return isValidPlacement(grid, gridSize, w.word, r, c, "down", dict)
-        })
+        const filler = findBestFiller(
+          allWords,
+          placedWordSet,
+          pattern,
+          len,
+          grid,
+          gridSize,
+          r,
+          c,
+          "down",
+          dict,
+        )
 
         if (filler) {
           placeWord(grid, filler.word, r, c, "down")
@@ -880,11 +896,393 @@ function generateFitted(words: WordEntry[]): CrosswordData {
   return finalize(grid, placed)
 }
 
+// ─── Best filler helper (playability-sorted) ─────────────────────
+
+function findBestFiller(
+  allWords: WordEntry[],
+  placedWordSet: Set<string>,
+  pattern: (string | null)[],
+  len: number,
+  grid: Grid,
+  gridSize: number,
+  row: number,
+  col: number,
+  direction: Direction,
+  dict: Set<string>,
+): WordEntry | null {
+  // Collect all matching candidates
+  const candidates: { entry: WordEntry; playability: number }[] = []
+
+  for (const w of allWords) {
+    if (w.word.length !== len) continue
+    if (placedWordSet.has(w.word)) continue
+
+    let matches = true
+    for (let i = 0; i < len; i++) {
+      if (pattern[i] !== null && pattern[i] !== w.word[i]) {
+        matches = false
+        break
+      }
+    }
+    if (!matches) continue
+
+    if (!isValidPlacement(grid, gridSize, w.word, row, col, direction, dict)) continue
+
+    candidates.push({ entry: w, playability: getPlayabilityScore(w.word) })
+
+    // Collect up to 50 candidates then pick best (avoid scanning all 178K for every slot)
+    if (candidates.length >= 50) break
+  }
+
+  if (candidates.length === 0) return null
+
+  // Sort by playability descending, pick best
+  candidates.sort((a, b) => b.playability - a.playability)
+  return candidates[0].entry
+}
+
+// ─── Algorithm: Smart ────────────────────────────────────────────
+
+function generateSmart(
+  words: WordEntry[],
+  onProgress?: (msg: string, pct: number) => void,
+): CrosswordData {
+  const NUM_ATTEMPTS = 5
+  let bestResult: CrosswordData | null = null
+  let bestScore = -Infinity
+
+  for (let attempt = 0; attempt < NUM_ATTEMPTS; attempt++) {
+    onProgress?.(`Attempt ${attempt + 1}/${NUM_ATTEMPTS}...`, (attempt / NUM_ATTEMPTS) * 100)
+
+    // Shuffle input words differently each attempt, but bias toward high-playability
+    const shuffled = [...words]
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+    }
+
+    // Sort by a mix of playability and length (longer + more playable first)
+    shuffled.sort((a, b) => {
+      const aScore = b.word.length * 100 + getPlayabilityScore(b.word) * 0.001
+      const bScore = a.word.length * 100 + getPlayabilityScore(a.word) * 0.001
+      // Add randomness for variety between attempts
+      return aScore - bScore + (Math.random() - 0.5) * 50
+    })
+
+    const result = generateSmartAttempt(shuffled, onProgress, attempt, NUM_ATTEMPTS)
+
+    // Score: prioritize words placed, then density, then playability
+    const bounds = { width: result.width, height: result.height }
+    const area = bounds.width * bounds.height || 1
+    let filled = 0
+    for (const row of result.grid) {
+      for (const cell of row) {
+        if (cell !== null) filled++
+      }
+    }
+    const density = filled / area
+    const avgPlay = result.avgPlayability ?? 0
+
+    const score =
+      result.words.length * 1000 + density * 500 + Math.log(avgPlay + 1) * 100 - area * 2
+
+    if (score > bestScore) {
+      bestScore = score
+      bestResult = result
+    }
+  }
+
+  onProgress?.("Done!", 100)
+  return bestResult ?? { grid: [[]], words: [], width: 0, height: 0, avgPlayability: 0 }
+}
+
+function generateSmartAttempt(
+  sortedWords: WordEntry[],
+  onProgress: ((msg: string, pct: number) => void) | undefined,
+  attempt: number,
+  totalAttempts: number,
+): CrosswordData {
+  const gridSize = 30
+  const grid = makeGrid(gridSize)
+  const dict = getValidWords()
+  const placed: GridWord[] = []
+
+  // Place first word
+  const first = sortedWords[0]
+  const centerRow = Math.floor(gridSize / 2)
+  const centerCol = Math.floor((gridSize - first.word.length) / 2)
+
+  placeWord(grid, first.word, centerRow, centerCol, "across")
+  placed.push({
+    word: first.word,
+    definition: first.definition,
+    row: centerRow,
+    col: centerCol,
+    direction: "across",
+  })
+
+  // Place remaining words with compactness + playability scoring
+  const unplaced: WordEntry[] = []
+  for (let i = 1; i < sortedWords.length; i++) {
+    const entry = sortedWords[i]
+    const candidates = findPlacements(grid, gridSize, placed, entry.word, dict)
+    if (candidates.length === 0) {
+      unplaced.push(entry)
+      continue
+    }
+
+    const currentBounds = getBoundingBox(grid)
+    for (const c of candidates) {
+      const testGrid = cloneGrid(grid)
+      placeWord(testGrid, entry.word, c.row, c.col, c.direction)
+      const newBounds = getBoundingBox(testGrid)
+
+      const withinBounds =
+        c.row >= currentBounds.minRow &&
+        c.col >= currentBounds.minCol &&
+        (c.direction === "across"
+          ? c.col + entry.word.length - 1 <= currentBounds.maxCol
+          : c.row + entry.word.length - 1 <= currentBounds.maxRow)
+
+      const density = calculateDensity(testGrid, newBounds)
+      const expansion =
+        newBounds.width * newBounds.height - currentBounds.width * currentBounds.height
+      const playability = getPlayabilityScore(entry.word)
+
+      c.score =
+        c.intersections * 8 +
+        density * 25 +
+        (withinBounds ? 15 : 0) -
+        expansion * 4 +
+        Math.log(playability + 1) * 3
+    }
+
+    candidates.sort((a, b) => b.score - a.score)
+    const best = candidates[0]
+    placeWord(grid, entry.word, best.row, best.col, best.direction)
+    placed.push({
+      word: entry.word,
+      definition: entry.definition,
+      row: best.row,
+      col: best.col,
+      direction: best.direction,
+    })
+  }
+
+  // Retry unplaced (2 passes)
+  for (let pass = 0; pass < 2; pass++) {
+    const stillUnplaced: WordEntry[] = []
+    for (const entry of unplaced) {
+      const candidates = findPlacements(grid, gridSize, placed, entry.word, dict)
+      if (candidates.length === 0) {
+        stillUnplaced.push(entry)
+        continue
+      }
+
+      const currentBounds = getBoundingBox(grid)
+      for (const c of candidates) {
+        const testGrid = cloneGrid(grid)
+        placeWord(testGrid, entry.word, c.row, c.col, c.direction)
+        const newBounds = getBoundingBox(testGrid)
+        const density = calculateDensity(testGrid, newBounds)
+        const expansion =
+          newBounds.width * newBounds.height - currentBounds.width * currentBounds.height
+        c.score = c.intersections * 8 + density * 25 - expansion * 4
+      }
+
+      candidates.sort((a, b) => b.score - a.score)
+      const best = candidates[0]
+      placeWord(grid, entry.word, best.row, best.col, best.direction)
+      placed.push({
+        word: entry.word,
+        definition: entry.definition,
+        row: best.row,
+        col: best.col,
+        direction: best.direction,
+      })
+    }
+    unplaced.length = 0
+    unplaced.push(...stillUnplaced)
+    if (stillUnplaced.length === 0) break
+  }
+
+  // Smart gap-filling: prefer high-playability words
+  const basePct = (attempt / totalAttempts) * 100
+  onProgress?.(`Attempt ${attempt + 1}/${totalAttempts}: Gap-filling...`, basePct + 10)
+
+  const bounds = getBoundingBox(grid)
+  const allWords = parseWordlist()
+  const placedWordSet = new Set(placed.map((p) => p.word))
+
+  // Pre-sort allWords by playability for faster best-match finding
+  const sortedByPlayability = [...allWords].sort(
+    (a, b) => getPlayabilityScore(b.word) - getPlayabilityScore(a.word),
+  )
+
+  // Horizontal gap-filling
+  for (let r = bounds.minRow; r <= bounds.maxRow; r++) {
+    for (let c = bounds.minCol; c <= bounds.maxCol; c++) {
+      if (grid[r][c] !== null) continue
+      if (c > 0 && grid[r][c - 1] !== null) continue
+
+      const pattern: (string | null)[] = []
+      let cc = c
+      while (cc <= bounds.maxCol) {
+        pattern.push(grid[r][cc])
+        cc++
+      }
+
+      for (let len = 3; len <= Math.min(15, pattern.length); len++) {
+        if (c + len < gridSize && grid[r][c + len] !== null) continue
+
+        let crossings = 0
+        for (let ci = 0; ci < len; ci++) {
+          if (pattern[ci] !== null) crossings++
+        }
+        if (crossings < 2) continue
+
+        const filler = findBestFiller(
+          sortedByPlayability,
+          placedWordSet,
+          pattern,
+          len,
+          grid,
+          gridSize,
+          r,
+          c,
+          "across",
+          dict,
+        )
+
+        if (filler && getPlayabilityScore(filler.word) >= 100) {
+          placeWord(grid, filler.word, r, c, "across")
+          placed.push({
+            word: filler.word,
+            definition: filler.definition,
+            row: r,
+            col: c,
+            direction: "across",
+          })
+          placedWordSet.add(filler.word)
+          break
+        }
+      }
+    }
+  }
+
+  // Vertical gap-filling
+  for (let c = bounds.minCol; c <= bounds.maxCol; c++) {
+    for (let r = bounds.minRow; r <= bounds.maxRow; r++) {
+      if (grid[r][c] !== null) continue
+      if (r > 0 && grid[r - 1][c] !== null) continue
+
+      const pattern: (string | null)[] = []
+      let rr = r
+      while (rr <= bounds.maxRow) {
+        pattern.push(grid[rr][c])
+        rr++
+      }
+
+      for (let len = 3; len <= Math.min(15, pattern.length); len++) {
+        if (r + len < gridSize && grid[r + len][c] !== null) continue
+
+        let crossings = 0
+        for (let ri = 0; ri < len; ri++) {
+          if (pattern[ri] !== null) crossings++
+        }
+        if (crossings < 2) continue
+
+        const filler = findBestFiller(
+          sortedByPlayability,
+          placedWordSet,
+          pattern,
+          len,
+          grid,
+          gridSize,
+          r,
+          c,
+          "down",
+          dict,
+        )
+
+        if (filler && getPlayabilityScore(filler.word) >= 100) {
+          placeWord(grid, filler.word, r, c, "down")
+          placed.push({
+            word: filler.word,
+            definition: filler.definition,
+            row: r,
+            col: c,
+            direction: "down",
+          })
+          placedWordSet.add(filler.word)
+          break
+        }
+      }
+    }
+  }
+
+  return finalize(grid, placed)
+}
+
 // ─── Public dispatcher ───────────────────────────────────────────
+
+// ─── Async worker API ────────────────────────────────────────────
+
+let _worker: Worker | null = null
+let _requestId = 0
+
+function getWorker(): Worker {
+  if (_worker) return _worker
+  _worker = new Worker(new URL("./crosswordGenerator.worker.ts", import.meta.url), {
+    type: "module",
+  })
+  return _worker
+}
+
+export interface GenerationProgress {
+  message: string
+  percent: number
+}
+
+/**
+ * Generate a crossword in a Web Worker (non-blocking).
+ * Use this from the UI to keep the page responsive during long generation.
+ */
+export function generateCrosswordAsync(
+  words: WordEntry[],
+  algorithm: CrosswordAlgorithm = "smart",
+  onProgress?: (progress: GenerationProgress) => void,
+): Promise<CrosswordData> {
+  return new Promise((resolve, reject) => {
+    const worker = getWorker()
+    const id = ++_requestId
+
+    const handler = (e: MessageEvent) => {
+      const msg = e.data
+      if (msg.id !== id) return
+
+      if (msg.type === "progress") {
+        onProgress?.({ message: msg.message, percent: msg.percent })
+      } else if (msg.type === "result") {
+        worker.removeEventListener("message", handler)
+        resolve(msg.data)
+      } else if (msg.type === "error") {
+        worker.removeEventListener("message", handler)
+        reject(new Error(msg.message))
+      }
+    }
+
+    worker.addEventListener("message", handler)
+    worker.postMessage({ type: "generate", id, words, algorithm })
+  })
+}
+
+// ─── Synchronous API (for worker internals) ──────────────────────
 
 export function generateCrossword(
   words: WordEntry[],
-  algorithm: CrosswordAlgorithm = "fitted",
+  algorithm: CrosswordAlgorithm = "smart",
+  onProgress?: (msg: string, pct: number) => void,
 ): CrosswordData {
   switch (algorithm) {
     case "original":
@@ -895,7 +1293,9 @@ export function generateCrossword(
       return generateDense(words)
     case "fitted":
       return generateFitted(words)
+    case "smart":
+      return generateSmart(words, onProgress)
     default:
-      return generateCompact(words)
+      return generateSmart(words, onProgress)
   }
 }
