@@ -24,6 +24,9 @@ const _schema = i.schema({
       status: i.string().indexed(),
       createdAt: i.date().indexed(),
     }),
+    userSettings: i.entity({
+      showTimer: i.boolean(),
+    }),
     userProgress: i.entity({
       date: i.string().indexed(),
       cellState: i.json().optional(),
@@ -51,6 +54,15 @@ const _schema = i.schema({
     crosswordCreator: {
       forward: { on: "crosswords", has: "one", label: "creator" },
       reverse: { on: "$users", has: "many", label: "createdCrosswords" },
+    },
+    settingsUser: {
+      forward: {
+        on: "userSettings",
+        has: "one",
+        label: "user",
+        onDelete: "cascade",
+      },
+      reverse: { on: "$users", has: "one", label: "settings" },
     },
     progressUser: {
       forward: {

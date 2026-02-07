@@ -11,6 +11,14 @@ const rules = {
       delete: "auth.id != null",
     },
   },
+  userSettings: {
+    allow: {
+      view: "auth.id in data.ref('user.id')",
+      create: "auth.id != null",
+      update: "auth.id in data.ref('user.id')",
+      delete: "auth.id in data.ref('user.id')",
+    },
+  },
   userProgress: {
     allow: {
       view: "auth.id in data.ref('user.id')",

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "motion/react"
 import { id as instantId } from "@instantdb/react"
 import { db } from "../lib/db"
 import { useCrosswordInteraction } from "../lib/useCrosswordInteraction"
+import { useUserSettings } from "../lib/useUserSettings"
 import { CrosswordGrid } from "../components/CrosswordGrid/CrosswordGrid"
 import { ModeToggle } from "../components/ModeToggle/ModeToggle"
 import { CluePanel } from "../features/daily/CluePanel/CluePanel"
@@ -63,6 +64,7 @@ function PuzzlePlayer({
   const [elapsed, setElapsed] = useState(0)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const { user } = db.useAuth()
+  const { settings } = useUserSettings()
   const progressIdRef = useRef<string | null>(null)
 
   // Query existing progress
@@ -177,7 +179,7 @@ function PuzzlePlayer({
       <div className={styles.header}>
         <h2>Daily Crossword</h2>
         <div className={styles.controls}>
-          <span className={styles.timer}>{formatTime(elapsed)}</span>
+          {settings.showTimer && <span className={styles.timer}>{formatTime(elapsed)}</span>}
           <ModeToggle mode={mode} onChange={setMode} />
         </div>
       </div>

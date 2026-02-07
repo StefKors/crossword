@@ -25,17 +25,21 @@ export function Header() {
         <div className={styles.actions}>
           <ThemeToggle />
           {user ? (
-            <div className={styles.userMenu}>
-              <span className={styles.email}>{user.email}</span>
-              <motion.button
-                className={styles.signOut}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={() => db.auth.signOut()}
+            <Link to="/settings" className={styles.settingsLink} aria-label="Settings">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 20 20"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
               >
-                Sign out
-              </motion.button>
-            </div>
+                <circle cx="10" cy="10" r="3" />
+                <path d="M10 1.5v2M10 16.5v2M1.5 10h2M16.5 10h2M3.4 3.4l1.4 1.4M15.2 15.2l1.4 1.4M3.4 16.6l1.4-1.4M15.2 4.8l1.4-1.4" />
+              </svg>
+            </Link>
           ) : (
             <Link to="/login" className={styles.signIn}>
               Sign in
