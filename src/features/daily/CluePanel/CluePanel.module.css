@@ -1,0 +1,149 @@
+/* Fill-it-in mode */
+.fillContainer {
+  padding: var(--space-4);
+}
+
+.fillTitle {
+  font-family: var(--font-serif);
+  font-size: var(--text-lg);
+  margin-bottom: var(--space-4);
+}
+
+.fillGroups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.fillGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.groupHeader {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.wordTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.wordTag {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  padding: var(--space-1) var(--space-3);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  text-transform: uppercase;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast),
+    opacity var(--transition-fast);
+}
+
+.wordTag.solved {
+  background: var(--color-success);
+  color: #ffffff;
+  border-color: var(--color-success);
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+
+/* Classic mode tabs */
+.tabsRoot {
+  display: flex;
+  flex-direction: column;
+}
+
+.tabsList {
+  display: flex;
+  border-bottom: 1px solid var(--color-border);
+  gap: 0;
+}
+
+.tab {
+  flex: 1;
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-secondary);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  text-align: center;
+  transition:
+    color var(--transition-fast),
+    border-color var(--transition-fast);
+}
+
+.tab:hover {
+  color: var(--color-text);
+}
+
+.tab[data-selected] {
+  color: var(--color-accent);
+  border-bottom-color: var(--color-accent);
+}
+
+.tabPanel {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.clueList {
+  display: flex;
+  flex-direction: column;
+}
+
+.clueItem {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: 0;
+  transition: background var(--transition-fast);
+  width: 100%;
+}
+
+.clueItem:hover {
+  background: var(--color-bg-secondary);
+}
+
+.clueItem.activeClue {
+  background: var(--color-grid-highlight-secondary);
+}
+
+.clueItem.complete {
+  opacity: 0.5;
+}
+
+.clueItem.complete .clueText {
+  text-decoration: line-through;
+}
+
+.clueNum {
+  font-weight: var(--weight-bold);
+  font-size: var(--text-sm);
+  min-width: 24px;
+  color: var(--color-text);
+}
+
+.clueText {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}

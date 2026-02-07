@@ -1,12 +1,82 @@
 .page {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: var(--space-4);
-  padding-top: var(--space-8);
+  gap: var(--space-6);
 }
 
-.subtitle {
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.timer {
+  font-family: var(--font-mono);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-secondary);
+  min-width: 60px;
+  text-align: right;
+}
+
+.content {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-6);
+  align-items: start;
+}
+
+@media (max-width: 800px) {
+  .content {
+    grid-template-columns: 1fr;
+  }
+}
+
+.gridSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  align-items: flex-start;
+}
+
+.clueSection {
+  min-width: 0;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.cluePanelWrapper {
+  min-height: 200px;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-16);
+  color: var(--color-text-secondary);
+  font-size: var(--text-lg);
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  padding-top: var(--space-16);
+  text-align: center;
+}
+
+.empty p {
   color: var(--color-text-secondary);
   font-size: var(--text-lg);
 }
