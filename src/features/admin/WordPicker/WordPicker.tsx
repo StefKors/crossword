@@ -5,10 +5,18 @@ import styles from "./WordPicker.module.css"
 interface WordPickerProps {
   words: WordEntry[]
   onGenerate: () => void
+  wordCount: number
+  onWordCountChange: (count: number) => void
   loading?: boolean
 }
 
-export function WordPicker({ words, onGenerate, loading }: WordPickerProps) {
+export function WordPicker({
+  words,
+  onGenerate,
+  wordCount,
+  onWordCountChange,
+  loading,
+}: WordPickerProps) {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -22,6 +30,22 @@ export function WordPicker({ words, onGenerate, loading }: WordPickerProps) {
         >
           {loading ? "Generating..." : "Generate Random Words"}
         </motion.button>
+      </div>
+
+      <div className={styles.sliderRow}>
+        <label htmlFor="word-count" className={styles.sliderLabel}>
+          Word count
+        </label>
+        <input
+          id="word-count"
+          type="range"
+          min={6}
+          max={40}
+          value={wordCount}
+          onChange={(e) => onWordCountChange(Number(e.target.value))}
+          className={styles.slider}
+        />
+        <span className={styles.sliderValue}>{wordCount}</span>
       </div>
 
       {words.length > 0 && (
@@ -43,7 +67,7 @@ export function WordPicker({ words, onGenerate, loading }: WordPickerProps) {
 
       {words.length === 0 && (
         <p className={styles.empty}>
-          Click &ldquo;Generate Random Words&rdquo; to select 35-45 words for your crossword.
+          Click &ldquo;Generate Random Words&rdquo; to select words for your crossword.
         </p>
       )}
     </div>

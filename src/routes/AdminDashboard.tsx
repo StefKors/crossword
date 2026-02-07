@@ -24,6 +24,7 @@ function AdminContent() {
   const [crosswordData, setCrosswordData] = useState<CrosswordData | null>(null)
   const [generating, setGenerating] = useState(false)
   const [algorithm, setAlgorithm] = useState<CrosswordAlgorithm>("compact")
+  const [wordCount, setWordCount] = useState(25)
 
   // Fetch saved crosswords
   const { data: savedData } = db.useQuery({
@@ -33,7 +34,7 @@ function AdminContent() {
   })
 
   const handleGenerateWords = () => {
-    const randomWords = getRandomWords(35, 45)
+    const randomWords = getRandomWords(wordCount, wordCount)
     setWords(randomWords)
     setCrosswordData(null)
   }
@@ -64,7 +65,12 @@ function AdminContent() {
 
       <div className={styles.grid}>
         <div className={styles.left}>
-          <WordPicker words={words} onGenerate={handleGenerateWords} />
+          <WordPicker
+            words={words}
+            onGenerate={handleGenerateWords}
+            wordCount={wordCount}
+            onWordCountChange={setWordCount}
+          />
 
           {words.length > 0 && (
             <div className={styles.generateSection}>
