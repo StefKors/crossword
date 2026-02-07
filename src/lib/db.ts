@@ -2,7 +2,7 @@ import { init } from '@instantdb/react';
 import schema from '../instant.schema';
 
 export const db = init({
-    appId: import.meta.env.VITE_INSTANT_API_KEY!,
+    appId: import.meta.env.VITE_INSTANT_APP_ID!,
     schema,
     useDateObjects: true,
 });
