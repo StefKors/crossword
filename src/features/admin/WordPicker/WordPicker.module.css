@@ -19,7 +19,147 @@
   font-size: var(--text-lg);
 }
 
+/* Theme search */
+.themeSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.sectionLabel {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-secondary);
+}
+
+.themeRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.themeSelect {
+  flex: 1;
+  min-width: 140px;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: border-color var(--transition-fast);
+}
+
+.themeSelect:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.themeDivider {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+}
+
+.themeInput {
+  flex: 1;
+  min-width: 140px;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  transition: border-color var(--transition-fast);
+}
+
+.themeInput:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.themeBtn {
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-secondary);
+  color: #ffffff;
+  font-weight: var(--weight-semibold);
+  font-size: var(--text-sm);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--transition-fast);
+}
+
+.themeBtn:hover:not(:disabled) {
+  background: var(--color-secondary-hover);
+}
+
+.themeBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Progress */
+.progressSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+}
+
+.progressLabel {
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  font-weight: var(--weight-medium);
+}
+
+.progressTrack {
+  height: 4px;
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.progressBar {
+  height: 100%;
+  background: var(--color-secondary);
+  border-radius: var(--radius-full);
+}
+
+/* Divider */
+.divider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: var(--space-4) 0;
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--color-border);
+}
+
+.dividerText {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  white-space: nowrap;
+}
+
+/* Random section */
+.randomSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
 .generateBtn {
+  width: 100%;
   padding: var(--space-2) var(--space-4);
   background: var(--color-accent);
   color: #ffffff;
@@ -40,11 +180,11 @@
   cursor: not-allowed;
 }
 
+/* Slider */
 .sliderRow {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  margin-bottom: var(--space-4);
 }
 
 .sliderLabel {
@@ -99,12 +239,14 @@
   text-align: right;
 }
 
+/* Word list */
 .list {
   max-height: 400px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
+  margin-top: var(--space-4);
 }
 
 .wordItem {

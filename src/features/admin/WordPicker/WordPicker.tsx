@@ -1,4 +1,7 @@
+import { useState } from "react"
 import { motion } from "motion/react"
+import { THEME_PRESETS } from "../../../lib/themePresets"
+import type { SearchProgress } from "../../../lib/semanticSearch"
 import type { WordEntry } from "../../../types/crossword"
 import styles from "./WordPicker.module.css"
 
@@ -7,7 +10,16 @@ interface WordPickerProps {
   onGenerate: () => void
   wordCount: number
   onWordCountChange: (count: number) => void
+  onThemeSearch: (theme: string) => void
+  themeLoading: boolean
+  themeProgress: SearchProgress | null
   loading?: boolean
+}
+
+const STAGE_LABELS: Record<SearchProgress["stage"], string> = {
+  "loading-model": "Loading AI model...",
+  "embedding-words": "Embedding words...",
+  searching: "Searching...",
 }
 
 export function WordPicker({
@@ -15,12 +27,119 @@ export function WordPicker({
   onGenerate,
   wordCount,
   onWordCountChange,
+  onThemeSearch,
+  themeLoading,
+  themeProgress,
   loading,
 }: WordPickerProps) {
+  const [themeInput, setThemeInput] = useState("")
+  const [selectedPreset, setSelectedPreset] = useState("")
+
+  const handleThemeSearch = () => {
+    const theme = themeInput || selectedPreset
+    if (!theme) return
+    onThemeSearch(theme)
+  }
+
+  const handlePresetChange = (value: string) => {
+    setSelectedPreset(value)
+    setThemeInput("")
+    if (value) {
+      onThemeSearch(value)
+    }
+  }
+
+  const handleInputKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && themeInput) {
+      handleThemeSearch()
+    }
+  }
+
   return (
     <div className={styles.container}>
       <div className={styles.header}>
         <h3 className={styles.title}>Words{words.length > 0 && ` (${words.length})`}</h3>
+      </div>
+
+      {/* Theme search section */}
+      <div className={styles.themeSection}>
+        <span className={styles.sectionLabel}>Theme</span>
+        <div className={styles.themeRow}>
+          <select
+            value={selectedPreset}
+            onChange={(e) => handlePresetChange(e.target.value)}
+            className={styles.themeSelect}
+            disabled={themeLoading}
+          >
+            <option value="">Pick a theme...</option>
+            {THEME_PRESETS.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
+          <span className={styles.themeDivider}>or</span>
+          <input
+            type="text"
+            value={themeInput}
+            onChange={(e) => {
+              setThemeInput(e.target.value)
+              setSelectedPreset("")
+            }}
+            onKeyDown={handleInputKeyDown}
+            placeholder="Type a custom theme..."
+            className={styles.themeInput}
+            disabled={themeLoading}
+          />
+          <motion.button
+            className={styles.themeBtn}
+            onClick={handleThemeSearch}
+            disabled={themeLoading || (!themeInput && !selectedPreset)}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.97 }}
+          >
+            {themeLoading ? "Searching..." : "Search"}
+          </motion.button>
+        </div>
+
+        {themeProgress && themeLoading && (
+          <div className={styles.progressSection}>
+            <span className={styles.progressLabel}>{STAGE_LABELS[themeProgress.stage]}</span>
+            <div className={styles.progressTrack}>
+              <motion.div
+                className={styles.progressBar}
+                initial={{ width: 0 }}
+                animate={{ width: `${themeProgress.percent}%` }}
+                transition={{ duration: 0.3 }}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Divider */}
+      <div className={styles.divider}>
+        <span className={styles.dividerText}>or generate randomly</span>
+      </div>
+
+      {/* Random generation section */}
+      <div className={styles.randomSection}>
+        <div className={styles.sliderRow}>
+          <label htmlFor="word-count" className={styles.sliderLabel}>
+            Word count
+          </label>
+          <input
+            id="word-count"
+            type="range"
+            min={6}
+            max={40}
+            value={wordCount}
+            onChange={(e) => onWordCountChange(Number(e.target.value))}
+            className={styles.slider}
+          />
+          <span className={styles.sliderValue}>{wordCount}</span>
+        </div>
+
         <motion.button
           className={styles.generateBtn}
           onClick={onGenerate}
@@ -32,22 +151,7 @@ export function WordPicker({
         </motion.button>
       </div>
 
-      <div className={styles.sliderRow}>
-        <label htmlFor="word-count" className={styles.sliderLabel}>
-          Word count
-        </label>
-        <input
-          id="word-count"
-          type="range"
-          min={6}
-          max={40}
-          value={wordCount}
-          onChange={(e) => onWordCountChange(Number(e.target.value))}
-          className={styles.slider}
-        />
-        <span className={styles.sliderValue}>{wordCount}</span>
-      </div>
-
+      {/* Word list */}
       {words.length > 0 && (
         <div className={styles.list}>
           {words.map((entry, i) => (
@@ -65,10 +169,8 @@ export function WordPicker({
         </div>
       )}
 
-      {words.length === 0 && (
-        <p className={styles.empty}>
-          Click &ldquo;Generate Random Words&rdquo; to select words for your crossword.
-        </p>
+      {words.length === 0 && !themeLoading && (
+        <p className={styles.empty}>Search by theme or generate random words to get started.</p>
       )}
     </div>
   )
