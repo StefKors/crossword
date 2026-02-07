@@ -1,5 +1,4 @@
 import { useMemo } from "react"
-import { Tabs } from "@base-ui-components/react/tabs"
 import { motion } from "motion/react"
 import type { CrosswordData, Direction, PuzzleMode, CellState } from "../../../types/crossword"
 import styles from "./CluePanel.module.css"
@@ -135,32 +134,31 @@ function ClassicPanel({
   }
 
   return (
-    <Tabs.Root defaultValue="across" className={styles.tabsRoot}>
-      <Tabs.List className={styles.tabsList}>
-        <Tabs.Tab value="across" className={styles.tab}>
-          Across
-        </Tabs.Tab>
-        <Tabs.Tab value="down" className={styles.tab}>
-          Down
-        </Tabs.Tab>
-      </Tabs.List>
-      <Tabs.Panel value="across" className={styles.tabPanel}>
-        <ClueList
-          clues={acrossClues}
-          isComplete={isWordComplete}
-          isSelected={isWordSelected}
-          onClueClick={onClueClick}
-        />
-      </Tabs.Panel>
-      <Tabs.Panel value="down" className={styles.tabPanel}>
-        <ClueList
-          clues={downClues}
-          isComplete={isWordComplete}
-          isSelected={isWordSelected}
-          onClueClick={onClueClick}
-        />
-      </Tabs.Panel>
-    </Tabs.Root>
+    <div className={styles.classicContainer}>
+      <div className={styles.clueColumn}>
+        <h4 className={styles.columnHeader}>Across</h4>
+        <div className={styles.clueScroll}>
+          <ClueList
+            clues={acrossClues}
+            isComplete={isWordComplete}
+            isSelected={isWordSelected}
+            onClueClick={onClueClick}
+          />
+        </div>
+      </div>
+      <div className={styles.columnDivider} />
+      <div className={styles.clueColumn}>
+        <h4 className={styles.columnHeader}>Down</h4>
+        <div className={styles.clueScroll}>
+          <ClueList
+            clues={downClues}
+            isComplete={isWordComplete}
+            isSelected={isWordSelected}
+            onClueClick={onClueClick}
+          />
+        </div>
+      </div>
+    </div>
   )
 }
 
