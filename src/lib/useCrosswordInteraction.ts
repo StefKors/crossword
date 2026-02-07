@@ -124,9 +124,8 @@ export function useCrosswordInteraction(
     const key = `${selectedCell.row},${selectedCell.col}`
 
     if (cellValues[key]) {
-      // Clear current cell
-      const next = { ...cellValues }
-      delete next[key]
+      // Clear current cell — use empty string so the change persists via merge
+      const next = { ...cellValues, [key]: "" }
       setCellValuesState(next)
       onCellChange?.(next)
     } else {
@@ -134,8 +133,7 @@ export function useCrosswordInteraction(
       const prev = moveToPrevCell(selectedCell.row, selectedCell.col, selectedDirection)
       if (prev) {
         const prevKey = `${prev.row},${prev.col}`
-        const next = { ...cellValues }
-        delete next[prevKey]
+        const next = { ...cellValues, [prevKey]: "" }
         setCellValuesState(next)
         onCellChange?.(next)
         setSelectedCell(prev)
