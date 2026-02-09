@@ -1,0 +1,72 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g filter="url(#filter0_d_506_897)">
+<rect x="100" y="100" width="824" height="824" rx="184" fill="white"/>
+<rect x="100" y="100" width="824" height="824" rx="184" fill="url(#paint0_linear_506_897)"/>
+</g>
+<mask id="mask0_506_897" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="100" y="100" width="824" height="824">
+<rect x="100" y="100" width="824" height="824" rx="184" fill="white"/>
+<rect x="100" y="100" width="824" height="824" rx="184" fill="url(#paint1_linear_506_897)"/>
+</mask>
+<g mask="url(#mask0_506_897)">
+<g style="mix-blend-mode:color-burn">
+<rect x="-23" y="-23" width="356.667" height="356.667" fill="#202020"/>
+<rect x="-23" y="-23" width="356.667" height="356.667" stroke="white" stroke-width="19.6167"/>
+</g>
+<g style="mix-blend-mode:color-burn">
+<rect x="-23" y="333.668" width="356.667" height="356.667" fill="#202020"/>
+<rect x="-23" y="333.668" width="356.667" height="356.667" stroke="white" stroke-width="19.6167"/>
+</g>
+<g style="mix-blend-mode:color-burn">
+<rect x="-23" y="690.332" width="356.667" height="356.667" fill="#202020"/>
+<rect x="-23" y="690.332" width="356.667" height="356.667" stroke="white" stroke-width="19.6167"/>
+</g>
+<g style="mix-blend-mode:color-burn">
+<rect x="333.666" y="-23" width="356.667" height="356.667" fill="#202020"/>
+<rect x="333.666" y="-23" width="356.667" height="356.667" stroke="white" stroke-width="19.6167"/>
+</g>
+<path d="M629.527 558.425C630.908 559.116 632.058 559.806 632.979 560.496C633.899 560.956 634.359 561.762 634.359 562.912C634.359 563.373 634.129 564.293 633.669 565.674C629.987 574.648 624.925 583.852 618.482 593.287C612.269 602.491 604.445 611.12 595.011 619.174C585.806 627.228 574.761 633.671 561.875 638.503C549.219 643.335 534.607 645.752 518.039 645.752C490.426 645.752 467.07 639.999 447.971 628.493C428.872 616.988 414.375 601.341 404.481 581.551C394.586 561.532 389.639 539.211 389.639 514.59C389.639 503.084 390.904 491.118 393.435 478.693C395.967 466.037 400.109 453.726 405.861 441.76C411.614 429.794 419.323 419.094 428.987 409.66C438.882 399.995 451.078 392.402 465.575 386.879C480.071 381.126 497.215 378.25 517.004 378.25C533.572 378.25 547.839 380.321 559.804 384.463C571.77 388.605 581.78 393.897 589.833 400.34C597.887 406.553 604.33 413.112 609.163 420.015C613.995 426.918 617.446 433.361 619.517 439.344C621.588 445.327 622.624 449.814 622.624 452.805C622.624 456.027 620.668 458.328 616.756 459.709L574.646 474.551C572.345 475.471 570.274 475.931 568.433 475.931C565.672 475.931 564.291 474.781 564.291 472.48C564.291 472.019 564.406 470.294 564.636 467.302C564.867 464.311 564.982 462.24 564.982 461.089C564.982 452.805 563.486 444.406 560.495 435.892C557.503 427.378 552.326 420.245 544.962 414.492C537.599 408.509 527.359 405.518 514.243 405.518C501.817 405.518 491.347 408.509 482.833 414.492C474.549 420.475 467.876 428.299 462.813 437.963C457.751 447.628 454.069 457.868 451.768 468.683C449.697 479.498 448.662 489.738 448.662 499.402C448.662 521.723 451.308 541.397 456.6 558.425C461.893 575.223 470.062 588.454 481.107 598.119C492.382 607.553 506.534 612.271 523.562 612.271C540.59 612.271 554.512 609.279 565.327 603.296C576.372 597.314 585.116 590.065 591.559 581.551C598.232 572.807 603.41 564.293 607.092 556.009C608.472 553.018 610.428 551.522 612.959 551.522C614.11 551.522 615.606 551.982 617.446 552.903L629.527 558.425Z" fill="black"/>
+<g style="mix-blend-mode:color-burn">
+<rect x="333.666" y="690.332" width="356.667" height="356.667" fill="#202020"/>
+<rect x="333.666" y="690.332" width="356.667" height="356.667" stroke="white" stroke-width="19.6167"/>
+</g>
+<g style="mix-blend-mode:color-burn">
+<rect x="690.334" y="-23" width="356.667" height="356.667" fill="#202020"/>
+<rect x="690.334" y="-23" width="356.667" height="356.667" stroke="white" stroke-width="19.6167"/>
+</g>
+<g style="mix-blend-mode:color-burn">
+<rect x="690.334" y="333.668" width="356.667" height="356.667" fill="#202020"/>
+<rect x="690.334" y="333.668" width="356.667" height="356.667" stroke="white" stroke-width="19.6167"/>
+</g>
+<g style="mix-blend-mode:color-burn">
+<rect x="690.334" y="690.332" width="356.667" height="356.667" fill="#202020"/>
+<rect x="690.334" y="690.332" width="356.667" height="356.667" stroke="white" stroke-width="19.6167"/>
+</g>
+<g opacity="0.2">
+<rect x="100" y="100" width="824" height="824" rx="184" fill="white"/>
+<rect x="100" y="100" width="824" height="824" rx="184" fill="url(#paint2_linear_506_897)"/>
+</g>
+</g>
+<defs>
+<filter id="filter0_d_506_897" x="78" y="89" width="868" height="868" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset dy="11"/>
+<feGaussianBlur stdDeviation="11"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.28 0"/>
+<feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_506_897"/>
+<feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_506_897" result="shape"/>
+</filter>
+<linearGradient id="paint0_linear_506_897" x1="512" y1="100" x2="512" y2="924" gradientUnits="userSpaceOnUse">
+<stop stop-color="#F9F9F9"/>
+<stop offset="1" stop-color="#E2E2E2"/>
+</linearGradient>
+<linearGradient id="paint1_linear_506_897" x1="512" y1="100" x2="512" y2="924" gradientUnits="userSpaceOnUse">
+<stop stop-color="#F9F9F9"/>
+<stop offset="1" stop-color="#E2E2E2"/>
+</linearGradient>
+<linearGradient id="paint2_linear_506_897" x1="512" y1="100" x2="512" y2="924" gradientUnits="userSpaceOnUse">
+<stop stop-color="#F9F9F9"/>
+<stop offset="1" stop-color="#E2E2E2"/>
+</linearGradient>
+</defs>
+</svg>
