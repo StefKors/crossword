@@ -8,5 +8,5 @@
 
 A daily crossword puzzle app with a built-in admin dashboard for generating and publishing puzzles. Pick a theme, tweak the algorithm, and hit publish -- a fresh crossword is ready for anyone to solve.
 
-<img src="Screenshot-1.png">
 <img src="Screenshot.png">
+<img src="Screenshot-1.png">
