@@ -494,6 +494,20 @@ describe("generateFillinSmart", () => {
     }
   })
 
+  it("has no empty white cells — every cell is either a letter or black", () => {
+    const result = getResult()
+
+    for (let r = 0; r < result.height; r++) {
+      for (let c = 0; c < result.width; c++) {
+        const cell = result.grid[r][c]
+        // cell should be null (black) or a non-empty letter string
+        if (cell !== null) {
+          expect(cell.length).toBeGreaterThan(0)
+        }
+      }
+    }
+  })
+
   it("reports progress via callback", { timeout: 30_000 }, () => {
     const messages: string[] = []
     generateFillinSmart((msg) => messages.push(msg))

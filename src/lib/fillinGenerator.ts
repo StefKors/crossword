@@ -776,21 +776,26 @@ export function generateFillinSmart(
       const solved = solve(slots, state, usedWords, MAX_BACKTRACKS, bt, best, 0)
 
       // Use full solution if solved, otherwise restore best partial fill
-      const finalAssignments = solved ? state.assignments : best.assignments
-      const filledCount = solved
-        ? slots.length
-        : best.filledCount
+      const baseAssignments = solved ? state.assignments : best.assignments
+      const baseFilledCount = solved ? slots.length : best.filledCount
 
-      if (filledCount > 0) {
-        const result = assembleResult(template, GRID_SIZE, GRID_SIZE, slots, finalAssignments)
-        const completeness = filledCount / slots.length
+      if (baseFilledCount > 0) {
+        // Greedy patch: try to fill any remaining slots without backtracking
+        const patchedAssignments = solved
+          ? baseAssignments
+          : greedyPatch(slots, baseAssignments, wordsByLen)
+        const patchedFilledCount = patchedAssignments.filter((a) => a !== null).length
+        const allFilled = patchedFilledCount === slots.length
+
+        const result = assembleResult(template, GRID_SIZE, GRID_SIZE, slots, patchedAssignments)
+        const completeness = patchedFilledCount / slots.length
         const avgPlay = result.avgPlayability ?? 0
         const lengths = new Set(result.words.map((w) => w.word.length))
 
         const score =
-          (solved ? 5000 : 0) +
+          (allFilled ? 5000 : 0) +
           completeness * 2000 +
-          filledCount * 100 +
+          patchedFilledCount * 100 +
           avgPlay * 0.1 +
           lengths.size * 50
 
@@ -798,16 +803,16 @@ export function generateFillinSmart(
           bestScore = score
           bestResult = result
         }
-      }
 
-      // If we got a complete fill, no need for more restarts on this template
-      if (solved) break
+        // Complete fill — stop early
+        if (allFilled) break
+      }
     }
 
-    // Early exit if we have a perfect fill
-    if (bestResult && bestResult.words.length === slots.length) {
+    // Early exit if we already found a complete fill (score includes 5000 bonus)
+    if (bestScore >= 5000) {
       onProgress?.("Done!", 100)
-      return bestResult
+      return bestResult!
     }
   }
 
