@@ -4,7 +4,7 @@
 </p>
 
 #### Supported Platforms
-<img src="https://stefkors.com/api/platform/index.svg?os=macos" height="28px" />
+<img src="https://stefkors.com/api/platform/index.svg?os=web" />
 
 A daily crossword puzzle app with a built-in admin dashboard for generating and publishing puzzles. Pick a theme, tweak the algorithm, and hit publish -- a fresh crossword is ready for anyone to solve.
 
