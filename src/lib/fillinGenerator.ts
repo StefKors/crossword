@@ -36,8 +36,8 @@ interface Crossing {
 
 // ─── Grid Template Generation ────────────────────────────────────
 
-const MAX_SLOT_LENGTH = 8
-const MIN_SLOT_LENGTH = 3
+export const MAX_SLOT_LENGTH = 8
+export const MIN_SLOT_LENGTH = 3
 
 function makeWhiteGrid(w: number, h: number): Grid {
   return Array.from({ length: h }, () => Array.from({ length: w }, () => true))
@@ -191,30 +191,38 @@ function isConnected(grid: Grid, width: number, height: number): boolean {
  * 3. Add a few scattered blacks for variety (up to target density)
  * 4. Validate connectivity and no short slots
  */
-function generateTemplate(width: number, height: number): Grid {
+export function generateTemplate(width: number, height: number): Grid {
   const grid = makeWhiteGrid(width, height)
 
   // Phase 1: Break long runs iteratively until all slots are <= MAX_SLOT_LENGTH
   for (let pass = 0; pass < 20; pass++) {
     let broke = false
 
-    // Break long horizontal runs
+    // Break long horizontal runs — try ALL valid positions (shuffled) per run
     const hRuns = findRuns(grid, width, height, "row")
     for (const run of hRuns) {
       if (run.length <= MAX_SLOT_LENGTH) continue
 
-      // Pick a break position that leaves both halves >= MIN_SLOT_LENGTH
       const minPos = run.start + MIN_SLOT_LENGTH
       const maxPos = run.start + run.length - MIN_SLOT_LENGTH - 1
       if (minPos > maxPos) continue
 
-      const breakCol = minPos + Math.floor(Math.random() * (maxPos - minPos + 1))
-      if (placeBlackPair(grid, run.line, breakCol, width, height)) {
-        broke = true
+      const positions: number[] = []
+      for (let p = minPos; p <= maxPos; p++) positions.push(p)
+      for (let i = positions.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1))
+        ;[positions[i], positions[j]] = [positions[j], positions[i]]
+      }
+
+      for (const breakCol of positions) {
+        if (placeBlackPair(grid, run.line, breakCol, width, height)) {
+          broke = true
+          break
+        }
       }
     }
 
-    // Break long vertical runs
+    // Break long vertical runs — try ALL valid positions (shuffled) per run
     const vRuns = findRuns(grid, width, height, "col")
     for (const run of vRuns) {
       if (run.length <= MAX_SLOT_LENGTH) continue
@@ -223,9 +231,18 @@ function generateTemplate(width: number, height: number): Grid {
       const maxPos = run.start + run.length - MIN_SLOT_LENGTH - 1
       if (minPos > maxPos) continue
 
-      const breakRow = minPos + Math.floor(Math.random() * (maxPos - minPos + 1))
-      if (placeBlackPair(grid, breakRow, run.line, width, height)) {
-        broke = true
+      const positions: number[] = []
+      for (let p = minPos; p <= maxPos; p++) positions.push(p)
+      for (let i = positions.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1))
+        ;[positions[i], positions[j]] = [positions[j], positions[i]]
+      }
+
+      for (const breakRow of positions) {
+        if (placeBlackPair(grid, breakRow, run.line, width, height)) {
+          broke = true
+          break
+        }
       }
     }
 
@@ -277,7 +294,7 @@ function generateTemplate(width: number, height: number): Grid {
 
 // ─── Slot Extraction ─────────────────────────────────────────────
 
-function extractSlots(grid: Grid, width: number, height: number): Slot[] {
+export function extractSlots(grid: Grid, width: number, height: number): Slot[] {
   const slots: Slot[] = []
   const cellMap = new Map<string, { slotIdx: number; pos: number; dir: Direction }[]>()
 
@@ -351,7 +368,10 @@ interface WordsByLength {
 
 let _cachedWords: WordsByLength | null = null
 
-function getWordsByLength(): WordsByLength {
+/** Maximum word length to include in the fill-in dictionary (matches longest words in the list) */
+const MAX_WORD_LENGTH = 15
+
+export function getWordsByLength(): WordsByLength {
   if (_cachedWords) return _cachedWords
 
   const all = parseWordlist()
@@ -359,13 +379,13 @@ function getWordsByLength(): WordsByLength {
 
   for (const entry of all) {
     const w = entry.word
-    if (w.length < MIN_SLOT_LENGTH || w.length > MAX_SLOT_LENGTH) continue
+    if (w.length < MIN_SLOT_LENGTH || w.length > MAX_WORD_LENGTH) continue
     if (!byLen[w.length]) byLen[w.length] = []
     byLen[w.length].push(w)
   }
 
   // Sort by playability descending, keep top N per length for performance
-  const MAX_PER_LENGTH = 600
+  const MAX_PER_LENGTH = 2000
   for (const len of Object.keys(byLen)) {
     const n = Number(len)
     byLen[n].sort((a, b) => getPlayabilityScore(b) - getPlayabilityScore(a))
@@ -489,7 +509,19 @@ function getOrderedCandidates(
 }
 
 /**
+ * Tracks the best partial solution seen during solving.
+ * The recursive solver backtracks all assignments on failure,
+ * so without this we'd lose all progress when a full solve fails.
+ */
+interface BestPartial {
+  assignments: (string | null)[]
+  filledCount: number
+}
+
+/**
  * Recursive backtracking solver.
+ * Snapshots the best partial fill into `best` whenever we beat the previous record.
+ * Uses `depth` to track how many slots are assigned without scanning the array each call.
  */
 function solve(
   slots: Slot[],
@@ -497,7 +529,15 @@ function solve(
   usedWords: Set<string>,
   maxBacktracks: number,
   bt: { count: number },
+  best: BestPartial,
+  depth: number,
 ): boolean {
+  // Snapshot if this is the deepest fill so far
+  if (depth > best.filledCount) {
+    best.assignments = [...state.assignments]
+    best.filledCount = depth
+  }
+
   const idx = selectSlot(state, slots)
   if (idx === -1) return true // All filled
 
@@ -518,7 +558,7 @@ function solve(
       }
     }
 
-    if (!wipeout && solve(slots, state, usedWords, maxBacktracks, bt)) {
+    if (!wipeout && solve(slots, state, usedWords, maxBacktracks, bt, best, depth + 1)) {
       return true
     }
 
@@ -532,6 +572,81 @@ function solve(
   }
 
   return false
+}
+
+// ─── Greedy Patch ────────────────────────────────────────────────
+
+/**
+ * After the main solver produces a partial fill, try to fill remaining
+ * slots greedily (no backtracking — just find any word that matches the
+ * crossing constraints). Processes most-constrained slots first so
+ * freshly placed words create new constraints for the next iteration.
+ */
+function greedyPatch(
+  slots: Slot[],
+  assignments: (string | null)[],
+  wordsByLen: WordsByLength,
+): (string | null)[] {
+  const result = [...assignments]
+  const usedWords = new Set<string>()
+  for (const a of result) {
+    if (a !== null) usedWords.add(a)
+  }
+
+  // Repeat until no more progress — each placed word may unlock neighbours
+  let progress = true
+  while (progress) {
+    progress = false
+
+    // Collect unfilled slots, sorted by most crossing letters known (most constrained first)
+    const unfilled: { idx: number; fixed: number }[] = []
+    for (let i = 0; i < result.length; i++) {
+      if (result[i] !== null) continue
+      const fixed = slots[i].crossings.filter(
+        (c) => result[c.otherSlotIdx] !== null,
+      ).length
+      unfilled.push({ idx: i, fixed })
+    }
+    unfilled.sort((a, b) => b.fixed - a.fixed)
+
+    for (const { idx } of unfilled) {
+      if (result[idx] !== null) continue // filled in this iteration
+      const slot = slots[idx]
+      const words = wordsByLen[slot.length]
+      if (!words) continue
+
+      // Build constraint pattern from already-filled crossing words
+      const pattern: (string | null)[] = new Array(slot.length).fill(null)
+      for (const crossing of slot.crossings) {
+        const other = result[crossing.otherSlotIdx]
+        if (other !== null) {
+          pattern[crossing.indexInSlot] = other[crossing.indexInOtherSlot]
+        }
+      }
+
+      // Find a matching word (words are pre-sorted by playability)
+      for (const word of words) {
+        if (usedWords.has(word)) continue
+
+        let matches = true
+        for (let i = 0; i < slot.length; i++) {
+          if (pattern[i] !== null && pattern[i] !== word[i]) {
+            matches = false
+            break
+          }
+        }
+
+        if (matches) {
+          result[idx] = word
+          usedWords.add(word)
+          progress = true
+          break
+        }
+      }
+    }
+  }
+
+  return result
 }
 
 // ─── Assembly ────────────────────────────────────────────────────
@@ -559,6 +674,16 @@ function assembleResult(
       grid[r][c] = word[j]
     }
     placed.push({ word, row: s.row, col: s.col, direction: s.direction })
+  }
+
+  // Convert any remaining unfilled white cells to black —
+  // no empty white squares should appear in the final puzzle
+  for (let r = 0; r < height; r++) {
+    for (let c = 0; c < width; c++) {
+      if (grid[r][c] === "") {
+        grid[r][c] = null
+      }
+    }
   }
 
   // Clue numbering (reading order)
@@ -644,12 +769,20 @@ export function generateFillinSmart(
 
       const bt = { count: 0 }
       const usedWords = new Set<string>()
-      const solved = solve(slots, state, usedWords, MAX_BACKTRACKS, bt)
+      const best: BestPartial = {
+        assignments: new Array(slots.length).fill(null),
+        filledCount: 0,
+      }
+      const solved = solve(slots, state, usedWords, MAX_BACKTRACKS, bt, best, 0)
 
-      const filledCount = state.assignments.filter((a) => a !== null).length
+      // Use full solution if solved, otherwise restore best partial fill
+      const finalAssignments = solved ? state.assignments : best.assignments
+      const filledCount = solved
+        ? slots.length
+        : best.filledCount
 
-      if (solved || filledCount > 0) {
-        const result = assembleResult(template, GRID_SIZE, GRID_SIZE, slots, state.assignments)
+      if (filledCount > 0) {
+        const result = assembleResult(template, GRID_SIZE, GRID_SIZE, slots, finalAssignments)
         const completeness = filledCount / slots.length
         const avgPlay = result.avgPlayability ?? 0
         const lengths = new Set(result.words.map((w) => w.word.length))

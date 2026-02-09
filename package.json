@@ -16,7 +16,9 @@
     "db:push": "npx instant-cli push schema --yes",
     "db:push:perms": "npx instant-cli push perms --yes",
     "db:push:all": "bun run db:push && bun run db:push:perms",
-    "db:pull": "npx instant-cli pull --yes"
+    "db:pull": "npx instant-cli pull --yes",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@base-ui-components/react": "^1.0.0-rc.0",
@@ -34,6 +36,7 @@
     "oxlint": "^1.43.0",
     "oxlint-tsgolint": "^0.11.4",
     "typescript": "^5.9.3",
-    "vite": "^7.3.1"
+    "vite": "^7.3.1",
+    "vitest": "^4.0.18"
   }
 }
